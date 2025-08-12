@@ -1,0 +1,92 @@
+In these set of lectures, we'll go over how to design machine learning algorithms to solve problems arising from PDEs.
+
+\section{August 12th}
+Consider a PDE defined on the domain $\Omega \subset \mathbb R^d$. For example let's consider the driven heat equation.
+\begin{align}
+	-\Delta u &= f & \text{Inside } \Omega\\
+	\partial_n u  &= 0 & \text{On } \partial \Omega
+\end{align}
+where $\Delta = \frac{d}{2} = - \partial^2$ is the laplacian.
+
+We can massage this into a minimization problem, where you attempt to minimize the residual. This is called the \textbf{strong form}
+\begin{align}
+	\inf_u \int_\Omega |\Delta u + f|^2 
+\end{align}
+This technique has origins in mathematics long ago, however today, we ansatz $u=u_\theta$ using a neural network, and modify $\theta$ s.t. you minimize that quantity. These are known as \textbf{PINNs (Physics Informed Neural Networks)}.
+
+Another method is to use the \textbf{variational form}
+\begin{align}
+	\inf_u \frac{1}{2} \int (|\nabla u|^2 - u f) ~dx 
+\end{align}
+You can convince yourself that this is correct by taking the variational derivative w.r.t. $u$, and see the minimizers is of the form of the PDE.
+
+When realizing these problem on a computers, $u$ is a high-dimensional (or infinite dimensional) quantity, hence this becomes the problem...
+
+\subsection{Finite Dimensional Approximation (In Function Space)}
+Consider decomposing $u$ into a basis $\{\varphi_i\}_i$
+\begin{align}
+	u(x) = \sum_{i=1}^N c_i \varphi_i(x)
+\end{align}
+Now it is your job to find $c_i$'s s.t. you minimize the variational form. So let's plug it in
+\begin{align}
+	\min_{\{c_i\}} \left[\frac{1}{2} \sum_{ij} \left( c_i c_j \int \nabla \varphi_i \cdot \nabla \varphi_j  \right)- \sum_i \left( c_i \int f \varphi_i dx \right) \right]
+\end{align}
+This is now just a quadratic minimization problem. Nice.\\
+\\
+However, this problem suffers from the curse of dimensionality. The number of coefficients grows exponential in the dimension. To see this, notice when you descrteize the domain $\Omega$, the number of grid points grows as $\text{(\# points)} = (L/\epsilon)^d$.\\
+\\
+So solving PDEs in high-dimension (in domain space) is an interesting problems. And it seems that neural networks can defeat the curse of dimensionality, so perhaps we need to combine the two!
+
+\subsection{What can Neural Networks do for PDEs?}
+So now that we've motived that neural networks can help us in PDEs, let's go over a few applications
+\begin{enumerate}
+	\item PINN: Using neural networks ansatz for solving PDEs. We've outlined this problem above.
+	\item Operator learning: Your use the neural networks to map a function to another function (thus it learns an operator). I.e. this can be a time-evolution kernel. The difficulty lies in encoding an infinite dimensional space into a finite dimensional space.
+	\item System identification:
+\end{enumerate}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
