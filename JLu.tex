@@ -1,6 +1,6 @@
 In these set of lectures, we'll go over how to design machine learning algorithms to solve problems arising from PDEs.
 
-\section{August 12th}
+\section{August 12th (1st course)}
 Consider a PDE defined on the domain $\Omega \subset \mathbb R^d$. For example let's consider the driven heat equation.
 \begin{align}
 	-\Delta u &= f & \text{Inside } \Omega\\
@@ -55,7 +55,7 @@ So now that we've motived that neural networks can help us in PDEs, let's go ove
 \end{enumerate}
 
 
-\subsection{asdf}
+\subsection{Bounding of Error Due to Discretization}
 Let $\mathcal X$ be some space over functions. Your true function $u_* \in \mathcal X$. Now consider a finite-dimensional approximation of the function space $u_N \in \mathcal X_N$, where we assume $\mathcal X_N \subset \mathcal X$ (this may not hold depending on the boundary condition you set). Note that your true solution $u_*$, may not necessarily be in $\mathcal X_N$. This yields a trivial bound on the residual
 \begin{align}
 	||u_* - u_N||_{x} \geq \underbrace{\inf_{u \in \mathcal X_n} ||u_* - u||_x}_{\text{Approximation error}}
@@ -88,6 +88,25 @@ Putting this together, you get a very nice principled bound on the variational f
 \begin{align}
 	\boxed{C || u_* - u_N||^2_x \leq \Sigma(u_N) - \Sigma(u_*) \leq \inf_{u \in \mathcal X_N} \frac{1}{2} || u_* - u ||^2_x}
 \end{align}
+
+
+\section{August 12th (2nd course)}
+Recall that given a PDE, we have some energy functional $\Sigma(u)$ which has a minimizer $u_* \in \mathcal X$. We then ask the question, given a discretization of the function space $\text{argmin}_{u \in \mathcal X_N} \Sigma(u) = u_N \in \mathcal X_N \subset \mathcal X$, how does your approximated $u_N$ compare to the true answer $u_*$
+\begin{align}
+	\inf_{u \in \mathcal X_N}||u-u_*||_X
+\end{align}
+Consider the set of functions $H^k(\Omega) = \{u : \int |\partial_{i_1} ... \partial_{i_d} u|^2 d x < \infty, \sum_j i_j = i, i \leq k\}$
+
+\begin{theorem}
+	[Bramble-Hilbert Lemma] Let $u$ be a function defined on the domain $\Omega$, and $v \in P_k(\Omega)$ ($k$'th order polynomials defined on domain $\Omega$). Under "mild" assumptions...
+	\begin{align}
+		\inf_{v \in P_k(\Omega)} \int_\Omega |u^{(i)} - v^{(j)}|^2 dx \leq C (\tex{diameter}(\Omega))^{m-k} \int_\omgea |u^{(m)}|^2 dx
+	\end{align}
+	where $u^{(i)}$ is the $i$'th order derivative, $(m)$ is the highest finite order derivative.\\
+	\\
+	As a result (which is not apparent to me a priori), the number of degrees of freedom scales $\sim h^{-d/s}$, where $h$ is the mesh size, $d$ is the dimension of the domain space $\Omega$, and $s$ are regularity conditions. So reading into it--- higher dimensional PDEs end up having "simpler" curves.
+\end{theorem}
+
 
 
 

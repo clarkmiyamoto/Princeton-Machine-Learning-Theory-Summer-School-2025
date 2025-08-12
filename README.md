@@ -2,8 +2,7 @@
 
 
 # Princeton Machine Learning Theory Summer School 2025
-Notes from the Princeton Machine Learning Theory Summer School (2025)
-
+Notes from the Princeton Machine Learning Theory Summer School (2025). See the summer school's homepage [here](https://mlschool.princeton.edu/)
 # Speakers
 1. Florent Krzakala (EPFL)
 2. Yury Polyanskiy (MIT)

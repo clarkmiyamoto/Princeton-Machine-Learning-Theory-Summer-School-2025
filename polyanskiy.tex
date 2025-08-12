@@ -1,0 +1,131 @@
+\section{Motivation}
+Information theory was motivated by attempting to study how much "information" is lost when we move from the continuous time signals to bits. In LLM, you end up just computing matrix multiplication. However keeping the entries of the matrix at full precision (i.e. float32), this is expensive (both in storage, and in transfer time between GPU and CPU), so what happens when we move from $\text{float}32 \to \text{float}4$? This is \textbf{quantization}.
+\\
+\\
+In a modern context, you have a transformer which converts text to tokens (integers), pictures to soft-tokens (Polyanskiy says this is a vector in $\mathbb R^{d_{model}}$). \\
+\\
+At the end of these lectures we'll prove a theorem on the optimal compression rate for quantizing the multiplication of two Gaussian iid matrices.
+$$
+\mathbb E || \hat Y - Y||_F^2
+$$
+where $Y = A B$, and $\hat Y$ is the same product where $A,B$ have been quantized.
+
+\section{Scalar Quantization (Information Theory)}
+\subsection{Uniform Quantization}
+Consider a quantization $x \in \mathbb R$, and I want to construct a map $x \mapsto \epsilon \in [x / \epsilon]$, where $[n] = [1,...,n]$. This is called \textbf{uniform quantization (UQ)} (in machine learning this is called \textbf{round to nearest}). We can then ask, what is the error of UQ?
+
+Consider $x \sim p_x$ (which is $U[-1/2, 1/2]$). This means as you take $\epsilon \to 0$ you find
+\begin{align}
+	x | [x/\epsilon] = m] \approx \text{Uniform}[-\epsilon /2, \epsilon/2]
+\end{align}
+Then you can compute
+\begin{align}
+	\mathbb E[(x -q(x))^2]  = \frac{\epsilon^2}{12} (1 + \mathcal O(1))=  \frac{2^{-2R}}{12}
+\end{align}
+
+\subsection{Dithering}
+Is there a rigorous way to write $\mathbb E[(x-q_\epsilon(x))^2] = \epsilon^2/12$?
+
+To do this, we introduce this cool math trick. Let $U \sim \text{Uniform}[-\epsilon/2, \epsilon/2] \perp X$. Now consider $Y = X+ U$. Now quantize $Y$, which is $q(Y) = q(X+U) = \epsilon[(x+u)/2]$. Now you subtract off the $U$, so your quantized estimate of $X$ is
+\begin{align}
+	\hat X = q(X+U) - U
+\end{align}
+
+\begin{proposition}
+	[Crypto Lemma] $(\hat X, X) =^{(d)} (X+ \tilde U, X)$, where $X \perp \tilde U \sim \text{Uniform}[-\epsilon/2,\epsilon,2]$
+	\\
+	\\
+	Proof: Notice that
+	\begin{align}
+		\hat X - X = q(X +U ) - (X+U) = \text{Uniform}[-\epsilon/2, \epsilon/2] \perp X
+	\end{align}
+	Note that this holds for any discretization / lattice scheme.
+\end{proposition}
+What's really nice is that this makes any resulting calculation of $f(X)$ very simple. I.e. consider you're wanting to see $Y = X^2$
+\begin{align}
+	\mathbb E[(Y - \hat Y)^2] = \mathbb E[(X^2 - \hat X^2)^2] = \mathbb E[(X^2 - (X+U)^2)^2] = \frac{\epsilon^2}{3}\mathbb E[X^2] + \text{constant}
+\end{align}
+
+\subsection{What about non-uniform $q$?}
+OpenAI's newest's open source model GPT-OSS uses MX-FP4 quantization. Your quantization domain becomes $\{0, \pm 1/2, \pm 1, \pm 3/2, \pm 2, \pm 4, \pm 6 \}$. They got these numbers because it's useful for hardware.
+
+
+\begin{definition}
+	For a given $p_x$. Defined the best quantization $D_{scalar}$ as
+	\begin{align}
+		D_{scalar} (R, P_x) & = \inf_{|\text{image } q| \leq 2^R} \mathbb E[|X-q(X)|^2]\\
+		& = \inf_{p_{x,y}} \{ \mathbb E[|X-Y|^2] : |\sup p_Y| \leq 2^R\}
+	\end{align}
+	So this is secretly the Wasserstein-2 projection. And it's very non-convex :(
+\end{definition}
+
+
+Fix $\text{im}(q) = \{c_1 <  ... < c_N\} = G$. The optimal quantization of $q$ is the nearest $n$-bin $C = \{B_j\}_j$. 
+
+Now that you're given the bins $\{B_j\}_{j=1}^N$, the optimal quantization $q(x_ = \mathbb E[X | X \in B_j\}$.
+
+
+\subsection{What is the best non-uniform quantization?}
+\begin{theorem}
+	[Panter-Diter '51] Under mild assumptions
+	\begin{align}
+		D_{scalar}(R; p_x) = \frac{2^{-2R}}{12} \left ( \int p_x(x)^{1/3} dx\right)^3
+	\end{align}
+	\\
+	\\
+	Proof: Let $R \to \infty$ and $N \to \infty$. So this means the number of points in interval I $:= N \int_I \lambda(x) dx$ So now you need to ask
+	\begin{align}
+		\mathbb E[(x-q(x))^2] & = \sum \mathbb E[(x-c_j)^2] \mathds 1_{x \in I_j}\\
+		&  \approx \sum \frac{\epsilon_j^2}{12} \mathbb P[x \in I_j]\\
+		& \approx \frac{1}{12 N^2} \int \lambda^{-2}(x) f(x) dx \\
+		& \geq C  \left(\int f^{-1/3} \right)^3 
+	\end{align}
+	 QED
+\end{theorem}
+There is some heuristic for doing this on a gaussian...
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\newpage
+\section{Vector Quantization}
+\subsection{VQ-VAE}
+\subsection{FSQ}
+\subsection{Information Theoretic Quantization}
+
+\section{VQI (Vector Quantization Information)}
+\section{Quantization for LLMs}
+
+\section{Open Problems}
