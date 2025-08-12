@@ -20,7 +20,16 @@ Another method is to use the \textbf{variational form}
 \end{align}
 You can convince yourself that this is correct by taking the variational derivative w.r.t. $u$, and see the minimizers is of the form of the PDE.
 
-When realizing these problem on a computers, $u$ is a high-dimensional (or infinite dimensional) quantity, hence this becomes the problem...
+Another method is to use the \textbf{weak form}, where we expect this
+\begin{align}
+	\forall v~ \int v (-\Delta u \cdot f) = 0 \iff \int_\Omega \nabla v \cdot \nabla u - v f = 0
+\end{align}
+
+\begin{problem}
+	To demonstrate your understanding, show the formulation of the strong, variational, and weak form in linear algebra. I.e. you want to solve $A x = b$, reformulate this into the various forms. 
+\end{problem}
+
+When realizing these problem on a computers, $u$ is a high-dimensional (or infinite dimensional) quantity, obviously this becomes a problem...
 
 \subsection{Finite Dimensional Approximation (In Function Space)}
 Consider decomposing $u$ into a basis $\{\varphi_i\}_i$
@@ -45,6 +54,40 @@ So now that we've motived that neural networks can help us in PDEs, let's go ove
 	\item System identification:
 \end{enumerate}
 
+
+\subsection{asdf}
+Let $\mathcal X$ be some space over functions. Your true function $u_* \in \mathcal X$. Now consider a finite-dimensional approximation of the function space $u_N \in \mathcal X_N$, where we assume $\mathcal X_N \subset \mathcal X$ (this may not hold depending on the boundary condition you set). Note that your true solution $u_*$, may not necessarily be in $\mathcal X_N$. This yields a trivial bound on the residual
+\begin{align}
+	||u_* - u_N||_{x} \geq \underbrace{\inf_{u \in \mathcal X_n} ||u_* - u||_x}_{\text{Approximation error}}
+\end{align}
+Going back to the forced heat equation in the variational form, we want to minimze
+\begin{align}
+	\Sigma(u) = \frac{1}{2} \int |\nabla u |^2 dx - \int u f dx
+	\inf_{u \in \mathcal X} \Sigma(u) = \Sigma(u_*)
+\end{align}
+From the bound, we know that $\Sigma(u_N)  - \Sigma(u_*)\geq  0$. Plugging this in
+\begin{align}
+	\Sigma(u_N) - \Sigma(u_*) & = \frac{1}{2} \int( |\nabla u_N|^2 - |\nabla u_*|^2 ) dx + \int (u_N - u_*) \Delta u_* dx\\
+	& = \frac{1}{2} \int |\nabla u_N - \nabla u_*|^2 dx
+\end{align}
+If $\Omega$ is bounded, then
+\begin{align}
+	\underbrace{\int |u_N - u_*|^2}_{||u_* - u_N||^2_x} dx < C \underbrace{\int |\nabla u_N - \nabla u_*|^2 dx}_{\sim (\Sigma(u_N) - \Sigma(u_*))}
+\end{align}
+And if you make an additional assumption that $\Omega$ is bounded AND convex, then you know that $C$ doesn't depend on $\text{dim}(\Omega)$. This gives us a pretty bound
+\begin{align}
+	\Sigma(u_N) - \Sigma(u_*) \geq  C || u_* - u_N||^2_x
+\end{align}\
+You can find another bound
+\begin{align}
+	\Sigma(u_N) - \Sigma(u_*) & = \inf_{u \in \mathcal X_N} \Sigma(u) - \Sigma(u_*)\\
+	& = \inf_{u \in \mathcal X_n} \frac{1}{2} \int |\nabla u - \nabla u_*|^2\\
+	& \leq \inf_{u \in \mathcal X_N} \frac{1}{2} || u - u_* ||^2_x
+\end{align}
+Putting this together, you get a very nice principled bound on the variational formulation of the problem.
+\begin{align}
+	\boxed{C || u_* - u_N||^2_x \leq \Sigma(u_N) - \Sigma(u_*) \leq \inf_{u \in \mathcal X_N} \frac{1}{2} || u_* - u ||^2_x}
+\end{align}
 
 
 
