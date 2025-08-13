@@ -62,7 +62,7 @@ Let $\mathcal X$ be some space over functions. Your true function $u_* \in \math
 \end{align}
 Going back to the forced heat equation in the variational form, we want to minimze
 \begin{align}
-	\Sigma(u) = \frac{1}{2} \int |\nabla u |^2 dx - \int u f dx
+	\Sigma(u) & = \frac{1}{2} \int |\nabla u |^2 dx - \int u f dx\\
 	\inf_{u \in \mathcal X} \Sigma(u) = \Sigma(u_*)
 \end{align}
 From the bound, we know that $\Sigma(u_N)  - \Sigma(u_*)\geq  0$. Plugging this in
@@ -107,6 +107,67 @@ Consider the set of functions $H^k(\Omega) = \{u : \int |\partial_{i_1} ... \par
 	As a result (which is not apparent to me a priori), the number of degrees of freedom scales $\sim h^{-d/s}$, where $h$ is the mesh size, $d$ is the dimension of the domain space $\Omega$, and $s$ are regularity conditions. So reading into it--- higher dimensional PDEs end up having "simpler" curves.
 \end{theorem}
 
+\begin{theorem}
+	[Barron 1993] Consider the Barron function space 
+	\begin{align}
+		B(\mathbb R^d) = \Big\{u:  \mathbb R^d \to \mathbb R \Big | \int_{\mathbb R^d} |\omega | | \hat u (\omega) | d\omega < \infty\Big\}
+	\end{align}
+	where $\hat u$ is the Fourier transform of $u$. 
+	\begin{align}
+		H^1(\mathbb R^d) & = \{u : \mathbb R^d \to \mathbb R | \int |u|^2 + |\nabla u|^2 dx < \infty\}\\
+		& = ... \int |\hat u (\omega)|^2 + |\omega|^2 \hat u (\omega)|^2 < \infty
+	\end{align}
+	The 2nd equality holds by Parseval's theorem, which states the $L_2$ norm is invariant under FT Transform.
+	\\
+	\\
+	Then $\forall N$, there exists 
+	\begin{align}
+		u_N(x) = \sum_{i=1}^N a_i \sigma(b_i x + c_i)
+	\end{align} s.t. the approximation error is bounded
+	\begin{align}
+		\int |u - u_N|^2 \mu(dx) \leq C \frac{||u||^2_{B(\mathbb R^d)}}{N}
+	\end{align}
+	\begin{sidework}
+		To me this is kinda surprising because $N$ is the number of basis function which you use to approximate $u$. You'd imagine that as you increase the number of basis functions that such functions "over fit", and start to have high residuals... But I might be thinking of this wrong.
+	\end{sidework}	
+\end{theorem}
+
+\begin{lemma}
+	Let $f \in$ convex hull of a set $C$ in $X$ (Hilber space), with $||g|| \leq b$. You find that $\forall g \in G$, then for any $n \geq 1$ every $c > b^2 - ||f||^2$ there exists lies in the convex hull of $G$, s.t.
+	\begin{align}
+		||f-f_n||^2 \leq \frac{c}{n}
+	\end{align}
+	Proof: Let $||f - f^*|| \leq \delta / n$ where $f^*$ in the convex hull of $G$. Now do a basis decomposition
+	\begin{align}
+		f^*= \sum_{i=1}^M \nu_i g_{il}^*, ~~~~~\text{s.t.}~ \gamma_i \in [0,1], \sum_i \gamma_i =1
+	\end{align}Randomly sample $g_1,..., g_n \sim \{g_j\}j$ with probability. This means 
+	\begin{align}
+		f_n= \frac{1}{n} \sum_{i}g_i
+	\end{align}
+\end{lemma}
+
+Ok let's consider a screened poisson equation
+\begin{align}
+	(-\Delta + \gamma^2) u & = f & \text{Defined on } \mathbb R^d
+\end{align}
+Just by inspection, if $f$ is defined to the $k$ derivative, then we'd imagine that $u$ should be well defined for the $k+2$ derivatives. The LHS has two more derivatives. This implies $||u||_{H^{k+2}(\mathbb R^d)} \leq ||f||_{H^k(\mathbb R^d)}$.
+
+\subsection{Cousins of Barron Spaces}
+\subsubsection{Compact Spaces}
+Consider a domain $\Omega = [0,1]^d$, you can define a barron space 
+\begin{align}
+	B^k([0,1]^d) = \{u= \sum_\omega \cos(2\pi \omega x) \hat u_\omega, \sum_k (1 + |\omega|^k ) |\hat u_k|< \infty\}
+\end{align}
+
+\subsubsection{Large $N$ limit}
+Consider a two layer neural network
+\begin{align}
+	u_N = \frac{1}{N} \sum_{i=1}^N a_i \sigma(b_i x +c_i)
+\end{align}
+In the $N \gg 1$ limit, you can think of $\frac{1}{N} \sum_{i=1}^N \approx \int$, so this becomes
+\begin{align}
+	\int a\sigma(b x + c) \mu(da, db, dc)
+\end{align}
 
 
 
