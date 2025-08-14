@@ -1,6 +1,6 @@
 In these set of lectures, we'll go over how to design machine learning algorithms to solve problems arising from PDEs.
 
-\section{August 12th (1st course)}
+\section{August 12th (1st session)}
 Consider a PDE defined on the domain $\Omega \subset \mathbb R^d$. For example let's consider the driven heat equation.
 \begin{align}
 	-\Delta u &= f & \text{Inside } \Omega\\
@@ -90,7 +90,7 @@ Putting this together, you get a very nice principled bound on the variational f
 \end{align}
 
 
-\section{August 12th (2nd course)}
+\section{August 12th (2nd session)}
 Recall that given a PDE, we have some energy functional $\Sigma(u)$ which has a minimizer $u_* \in \mathcal X$. We then ask the question, given a discretization of the function space $\text{argmin}_{u \in \mathcal X_N} \Sigma(u) = u_N \in \mathcal X_N \subset \mathcal X$, how does your approximated $u_N$ compare to the true answer $u_*$
 \begin{align}
 	\inf_{u \in \mathcal X_N}||u-u_*||_X
@@ -169,10 +169,26 @@ In the $N \gg 1$ limit, you can think of $\frac{1}{N} \sum_{i=1}^N \approx \int$
 	\int a\sigma(b x + c) \mu(da, db, dc)
 \end{align}
 
-
-
-
-
+\section{August 13th}
+Recall, we were solving the variational problem, which involves minimizing the energy functional. For example, the forced-heat equation $-\Delta u = f$ has the variational form
+\begin{align}
+	\Sigma(u) & =  \int_\Omega (\frac{1}{2} |\nabla u|^2 - u f)dx\\
+	& = |\Omega|~ \mathbb E_{x \sim \text{Unif}(\Omega)} [|\nabla u(x) |^2 - uf|]\\
+	& \approx \frac{|\Omega|}{m} \sum_{i=1}^m |\nabla u(x_i)|^2 - u(x_i)f(x_i) \equiv \Sigma_m(u) & \text{Monte Carlo sampling}
+\end{align}
+Then we get $u_{N,m} = \inf_{u \in \mathcal X_N} \Sigma_m (u)$. We now ask how far this monte carlo finite dimensional approximation is from the true answer $u_* \in \mathcal X$
+\begin{align}
+	\mathbb E|| u_{N,m} - u_*||^2_{X} & \leq \mathbb E \Sigma(u_{N,m}) - \Sigma(u_*)\\
+	  \begin{split}  & = \mathbb E \Big[ \Sigma(u_{N,m} - \Sigma_m(u_{N,m}) + \Sigma_m(u_{N,m})  - \Sigma_m (u_N) \\  & + \Sigma_m(u_N) - \Sigma_m(u_N) + \Sigma(u_N) - \Sigma(u_*) \Big] \end{split} & (\text{Insert } \pm 0) \\
+	& \leq \text{Approximation Error}
+\end{align}
+Lu then spends the rest of the lecture reformulating various problems into this variational form problem. These discussions were non-informative, so I didn't take detailed notes
+\begin{enumerate}
+	\item Green's Functions:
+	\item Eigenvalue problem: He basically just shows you can find the wave function in quantum mechanics using a monte-carlo scheme, see any numerical physics textbook on this.
+	\item Iterative schemes:
+	\item Non-linear PDEs (i.e. Optimal Control / Hamilton-Jacobi Bellman equation): He discusses 
+\end{enumerate}
 
 
 

@@ -51,7 +51,7 @@ OpenAI's newest's open source model GPT-OSS uses MX-FP4 quantization. Your quant
 
 
 \begin{definition}
-	For a given $p_x$. Defined the best quantization $D_{scalar}$ as
+	For a given $p_x$. The best quantization $D_{scalar}$ is defined as
 	\begin{align}
 		D_{scalar} (R, P_x) & = \inf_{|\text{image } q| \leq 2^R} \mathbb E[|X-q(X)|^2]\\
 		& = \inf_{p_{x,y}} \{ \mathbb E[|X-Y|^2] : |\sup p_Y| \leq 2^R\}
@@ -82,48 +82,235 @@ Now that you're given the bins $\{B_j\}_{j=1}^N$, the optimal quantization $q(x_
 	\end{align}
 	 QED
 \end{theorem}
-There is some heuristic for doing this on a gaussian...
+There is some heuristic for doing this on a gaussian... But I missed it lol.
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-\newpage
 \section{Vector Quantization}
+
+From last time, we did $X \mapsto \hat X \in \{\text{Discrete subset of } \mathbb Z^R\}$, and we found that $\lambda^* \sim \text{pdf}^{1/3}$.
+
+
+Now let's do vector quantization. Let $X = [x_1, ..., x_n]$, and perform the quantization map $\hat X = [\lfloor x_1 \rfloor, ..., \lfloor x_n \rfloor]$. So obviously, we're interested in determining the optimal quantization, but it is always optimal w.r.t. a particular operation. In this case, Polyanskiy says you're interested in dot products
+\begin{align}
+	\min_{\hat X} \mathbb E[(A^T X - A^T \hat X)^2] = \min_{\hat X} \mathbb E[(A^T (X - \hat X))^2] = (X - \hat X) H (X - \hat X)
+\end{align}
+where $H = \mathbb E[AA^T]$.\\
+\\
+\begin{sidework}
+An observation:
+
+It is impossible to solve this (post-quantum) [He doesn't know what post quantum means, but heuristically this problems depends on nearest-neighbor lattice search, and quantum computers have a hard time with sparse graphs]. Here's a proof that this is a nearest-neighbor lattice search.
+
+	Notice that $H$ is a linear transformation, so by 3Blue1Brown, you're skewing the coordinate space that the vectors $X,\hat X$ live on. If you quantize the coordinate space, you'll notice you're on a lattice, and figuring out where to optimally place $\hat X$ on said lattice it's a lattice search problem. soft-QED.
+\end{sidework}
+
+\begin{sidework}
+	Boris asks a question: why not just optimize on $\min_{\hat X \in Q \mathbb Z^R}$ (that is instead of quantizing on the skewed lattice, you quantize on the square lattice, and  forget about $Q$)? This doesn't work because you eventually will need to communicate $Q$, which costs bits, hence you're work will be lost forever :(
+\end{sidework}
+\textbf{Goal:} You have $X \in \mathbb R^n$, and we want a map $X \mapsto \hat X = q(x)$ where $|\text{image}(q)| = 2^{nR}$.
+\begin{align}
+	q = \sum_j c_j \mathds  1_{\mathcal D_j}
+\end{align}
+
+A particular solution is the \textbf{Lloyd Max algorithm}
+\begin{enumerate}
+	\item For fixed $\mathcal C = \{c_1, ..., c_N\}$, the optimal $q$ is
+		\begin{align}
+			q(x) = \text{argmin}_{c \in \mathcal C}  ||x - c||
+		\end{align}
+	\item For fixed $\mathcal D_1 ,..., \mathcal D_n$, the optimal 
+		\begin{align}
+			c_j = \mathbb E[X | X\in \mathcal D_j]
+		\end{align}
+\end{enumerate}
+
+
 \subsection{VQ-VAE}
+An application of vector quantization in machine learning is VQ-VAE (Vector quantization - variational auto encoder). You have the following autoencoder structure
+
+\begin{align}
+	f_\theta(X) = Z = (z_1,..., z_m)\\
+q_c (Z)  = \hat Z = (\hat z_1, ..., \hat z_m)\\
+g_\varphi(\hat Z) = \hat X
+\end{align}
+so your end to end network is $\hat X = g_\varphi(q_c(f_\theta(X)))$. Your objective is reconstruction, so your loss function is
+\begin{align}
+	\mathbb E_x||X -\hat X||^2_2
+\end{align}
+however the problem is if you differentiate this loss, the gradients won't flow to $\theta$, as $q_c$ is a step function, so certain points won't generate any gradient. The trick to get around this is to turn-off the $q_c$ block on backprop.
+\begin{align}
+	||X - g_\varphi(\hat Z) ||^2_2 + \lambda \sum_i || z_i - \hat z_i ||_2^2
+\end{align}
+People also use this trick in mixture of experts models to allow gradients to flow through.\\
+\\
+Polyanskiy also has an aside on analytically computing the gradients on the first loss, and proposes an alterative solution (instead of using the 2nd loss).
+
+\subsection{Information Theory}
+Let $\underline x = (x_1 , ..., x_n) \sim p_x$. Find the quantizer $q(\underline x)$ with $| \text{image} (q)| = 2^{nR}$ s.t.
+\begin{align}
+	\min \mathbb E[||\underline x - q(\underline x)||^2]
+\end{align}
+
+\textbf{Property:}
+For all $q$, there exists a coupling $p_{x,y} \in \mathcal P(\mathbb R \times \mathbb R)$ s.t.
+\begin{enumerate}
+	\item $I(x; y) \leq R$
+	
+	\emph{Proof:} 
+	\begin{align}
+		R & \geq \frac{1}{n} I(\underline x ; \hat{ \underline x}) \\
+		& = \frac{1}{n} (S(x_1^n) - S(x_1^n | \hat x_1^n)\\
+		& = \sum_i S(x_i) - S(x_i | \hat x_1^n, x^{i-1}_1) \leq ... - S(x_i | \hat x_i^n)\\
+		& \geq \frac{1}{n} \sum_i S(x_i) - S(x_i, \hat x_i) = \frac{1}{n} \sum_i I(x_i ; \hat x_1)
+	\end{align}
+	where $S(\cdot)$ is entropy, and $S(\cdot | *)$ is the conditional entropy. If $x_1^n, \hat x_1^n \perp \tau \sim \text{Uniform}([n])$, then we notice that 
+	\begin{align}
+		= I(x; y | \tau)
+	\end{align}
+	and now $\tau \perp x$, you find that $I(x; y | \tau) = I(x; y, \tau)  \geq I(x;y)$. \emph{QED.}
+	\item $\mathbb E[(x-y)^2] \leq \frac{1}{n} \mathbb E_x [||x - q(x)||^2]$
+	
+	\emph{Proof:} $\mathbb E[(x-y)^2] = \frac{1}{n} \sum_i \mathbb E[(x_i - \hat x_i)^2] = \frac{1}{n} ||x-q(x)||^2 $ \emph{QED.}
+\end{enumerate}
+
+\begin{corollary}
+	$\forall q$ we must have $\mathbb E[||\underline x - q(\underline x)||^2] \geq n  D_{vec}(R)$ where
+	\begin{align}
+		D_{vec}(R)=  \inf_{p_{y|x}} \{ \mathbb E[(x-y)^2] : I(x;y) \leq R\}
+	\end{align} If you're an optimal person (I am not), you'll notice that this is an EOT projection, hence it's a convex problem.\\
+	\\
+	\emph{Proof:} Take the lagrange dual of formulation of $D_{vec}(R)$. This yields
+	\begin{align}
+		D_{vec}(R) = \min \mathbb E( x - y )^2 + \lambda I(x; y)
+	\end{align}
+\end{corollary}\begin{sidework}
+	Example:
+	
+	Consider $p_x = \mathcal N(0,1)$. If $x \sim \mathcal N$, then $\forall Y$ (which is a random variable) if we make $Y_G$ be the Gaussian version of $Y$ (that $Y_G \sim \mathcal N(\mu_y, \sigma_y^2)$, is set s.t. $\mu_y = \mathbb E[Y], \sigma_y^2 = \text{Var}(Y)$). One can show
+	\begin{align}
+		I(\underline X; \underline Y) \geq I (\underline X; \underline Y_G)
+	\end{align}
+	But isn't this trivial? This is a non-linear transformation of the distribution, hence it's strictly decreasing...
+	
+	Anyways... Let's consider $X = \alpha Y + \beta Z$ , where $X,Y \sim \mathcal N(0, \Sigma)$ and $Z \sim \mathcal N(0,1)$. This implies
+	\begin{align}
+		I(X;  Y) = \frac{1}{2} \log ( 1 + \mathbb E(\alpha Y)^2  / \mathbb E(\beta Z)^2) = \frac{1}{2} \log (1 + \alpha^2 \sigma^2 / \beta^2\\
+		\mathbb E(X-Y)^2 = (1- \alpha)^2 \sigma^2 + \beta^2 
+	\end{align}
+	These implies $\alpha = 1$.\\
+	\\
+	Now you redo it
+	\begin{align}
+		D = \beta^2\\
+		I = \frac{1}{2} \log (1/\beta^2)
+	\end{align}
+	This implies $D_vec = 2^{-2R}$
+\end{sidework}
+
+\begin{theorem}
+	For all $p_{y | x}$ with $I(X; Y) \leq R$, there exists $q$ such that $|q(x)| \leq 2^{nR}$. That is $\mathbb E||x - q(x)||^2 \leq n \mathbb E(x-y)^2 + \mathcal O(n)$
+\end{theorem}
+\begin{theorem} [Generalization of last theorem]
+	Consider (\underline x, \underline y) on $\mathbb R^n \times \mathbb R^n$. For all $M, \gamma$, there exists $q: \underline x \to \{c_1, ..., c_{n+1}\}$ such that
+	\begin{align}
+		\mathbb E[||\underline x - q(\underline x)||^2] \leq \mathbb E[||\underline x - \underline y||^2] + e^{-M/\gamma}\mathbb E [||\underline x||^2] + \mathbb E||\underline x||^2 \mathds 1\{i(\underline x; \underline y) > \log \gamma\}
+	\end{align}
+	where $i (\underline a; \underline b) = \log p_{x,y}(a,b) / p_x(a) p_y(b)$ is the information density.
+\end{theorem}
+To see what the RHS of this bound means, let's see an application.
+
+Let $x = (x_1,..., x_n) \sim p_x$ and $y := (y_1, ..., y_n) \sim p_{y|x}$. Where the coordinates are independent of each other.
+\begin{align}
+	i(a^n ; b^n) \equiv \log \frac{p_{x,y}}{p_{x} p_y} = \sum_{t=1}^n
+ \log \frac{p_{x,y}}{p_x p_y}\Big|_{a_t, b_t}
+ \end{align} 
+ This means in the limit as $n \gg 1$
+ \begin{align}
+ 	\frac{1}{n} i(x; y) \to \mathbb E [i] = I(x; Y)
+ \end{align}
+
+
+\subsection{Dot Products}
+Ok let's go back to dot products. Our objective is to
+\begin{align}
+	\min \mathbb E[(x^T A - \hat x^T A)^2] \iff \min (x-\hat x)^T H (x - \hat x)
+\end{align}
+Let's assume $\underline x \sim \mathcal N(0, \mathbb I)$, so your minimization becomes
+\begin{align}
+	\min \{ I(\underline x; \underline y) : \mathbb E(\underline x - \underline y)^T H (\underline x - \underline y ) \leq D\}
+\end{align}
+Now we diagonalize our $H = U^T \Lambda U$, and this just is rotation your Gaussian's covariance matrix. From the previous example, we learned that you can just do $\underline y \sim \mathcal N$,
+\begin{align}
+	\min \{\sum_i I(x_i, y_i) : \sum(x_i -y_i )^2 \beta_i^2 \leq D \}\\
+	\min_{\beta_i^2 \in [0,1]} \{ \frac{1}{2} \sum_i \log \frac{1}{\beta^2_i} : \sum_i \beta_i^2 c_i^2 \leq D\}
+\end{align}
+You can now solve this using Lagrange multipliers.  Now you find that
+\begin{align}
+	\beta_i^2 \sigma_i^2 = \begin{cases}
+		T, & \sigma_i^2 > T\\
+		\sigma_i^2 , &\sigma^2_i < T
+	\end{cases}
+\end{align}
+This implies 
+\begin{align}
+	R_i = \begin{cases}
+		\frac{1}{2} \log \frac{T}{\sigma_i^2}, & \sigma_i^2 > T \\ 0, &\sigma^2_i < T
+	\end{cases}
+\end{align}
+
+
+
+
 \subsection{FSQ}
+
+
+
+
+
+
+
+
+
+
 \subsection{Information Theoretic Quantization}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 \section{VQI (Vector Quantization Information)}
 \section{Quantization for LLMs}
