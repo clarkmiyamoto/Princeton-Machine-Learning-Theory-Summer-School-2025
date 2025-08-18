@@ -1,0 +1,146 @@
+%%% Document Formatting
+\documentclass[12pt,fleqn]{article}
+\usepackage[a4paper,
+            bindingoffset=0.2in,
+            left=0.75in,
+            right=0.75in,
+            top=0.8in,
+            bottom=0.8in,
+            footskip=.25in]{geometry}
+\setlength\parindent{10pt} % No indent
+
+%%% Imports
+% Mathematics
+\usepackage{amsmath} % Math formatting
+\numberwithin{equation}{section} % Number equation per section
+\DeclareMathOperator{\Tr}{Tr}
+
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{definition}{Definition}
+\newtheorem{proof}{Proof}
+\newtheorem{lemma}{Lemma}
+\newtheorem{example}{Example}
+
+\usepackage{amsmath}
+\usepackage{amsfonts} % Math fonts
+\usepackage{amssymb} % Math symbols
+\usepackage{mathtools} % Math etc.
+\usepackage{slashed} % Dirac slash notation
+\usepackage{cancel} % Cancels to zero
+\usepackage{empheq}
+\usepackage{breqn}
+
+\newcommand{\expect}[1]{\mathbb{E}\left[#1\right]}
+
+
+% Visualization
+\usepackage{graphicx} % for including images
+\graphicspath{ {} } % Path to graphics folder
+\usepackage{tikz}
+
+
+
+%%% Formating
+\usepackage{hyperref} % Hyperlinks
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+    pdftitle={Overleaf Example},
+    pdfpagemode=FullScreen,
+    }
+\urlstyle{same}
+
+\usepackage{mdframed} % Framed Enviroments
+\newmdenv[ 
+  topline=false,
+  bottomline=false,
+  skipabove=\topsep,
+  skipbelow=\topsep
+]{sidework} %% Side-work
+
+\usepackage{lipsum} % Lorem Ipsum example text
+
+%%%%% ------------------ %%%%%
+%%% Title
+\title{Two Layer Neural Network, on NQS}
+\author{Clark Miyamoto (cm6627@nyu.edu)}
+\date{Date}
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+	How does the $k$-design of a neural network's initializes change under two-layer dynamics. Recall a $k$-design is when 
+\end{abstract}
+\section{Idea}
+Recall that a $k$-design for distribution $\nu$ is formed when
+\begin{align}
+	\mathbb E_{|\psi \rangle \sim \mu_H} [|\psi\rangle\langle\psi|^{\otimes k}]  = \mathbb E_{\theta\sim \nu}[| \psi_\theta \rangle \langle \psi_\theta|^{\otimes k}]
+\end{align}
+where $\mu_H$ is the Haar measure.\\
+\\
+There are papers on "dynamical mean field theory of two layer neural networks", where basically they initalize the weights from $\theta_0 \sim \nu_0$, and then time evolve $\theta_t \mapsto \theta_{t+dt}$ them according to SGD. If we inspect $\text{Law}(\theta_t) = \nu_t$, then by Fokker Planck you get a PDE $\nu_t$. From here they analyze the long-time behavior of this PDE and make bounding statements.
+
+It would be interesting to see if this technique can be applied to this measure of $k$-designs. I.e. given an ansatz (which I'll assume is a 2-design), and an initial distribution for the weights, what will the long-term behavior of $\mathbb E_{\theta\sim \nu}[| \psi_\theta \rangle \langle \psi_\theta|^{\otimes k}]$? Will we 
+\section{Calculation}
+
+
+Consider a wave function (parameterized by a two-layer neural network $|\psi_\theta\rangle \in \mathcal H_2^{\otimes N}$, where $N$ is the number of qubits. What I mean is your neural network is $f_\theta : \{\pm 1\}^N \to \mathbb R$, such that the wave function is
+\begin{align}e
+	f_\theta(\mathbf s) & = \frac{1}{N} \sum_{i=1}^N a_i \sigma(\langle \mathbf w_i, \mathbf s \rangle + b_i)\\
+	| \psi_\theta \rangle & = \frac{1}{Z_\theta} \sum_{\mathbf s}\exp \left ( f_\theta (\mathbf s)\right) |\mathbf s\rangle, ~~ \text{s.t. } Z_\theta = |\langle \psi_\theta | \psi_\theta \rangle|^2
+\end{align}
+\begin{sidework}
+	A natural property is the gradient of the log partition function
+	\begin{align}
+		\partial_\theta \log Z_\theta = \frac{1}{Z_\theta}  2 \langle \psi_\theta | \psi_\theta\rangle \left ( \partial_\theta \right)  
+	\end{align}
+	\begin{align}
+		\partial_\theta  \langle \psi_\theta | \psi_\theta \rangle & = \partial_\theta \frac{1}{Z_\theta^2} \sum_{\mathbf s, \mathbf s'} \exp(f_\theta(\mathbf s) + f_\theta(\mathbf s'))  \underbrace{\langle \mathbf s | \mathbf s'\rangle}_{\delta_{\mathbf s, \mathbf s'}} \\
+		& = \frac{1}{Z^2_\theta} \sum_{\mathbf s} \exp(2 f_\theta(\mathbf s))  
+	\end{align}
+\end{sidework}
+
+In neural quantum states, you attempt to minimize the loss function
+\begin{align}
+	\mathcal L(\theta) & = \frac{\langle \psi_\theta| H| \psi_\theta \rangle }{\langle \psi_\theta | \psi_\theta\rangle}\\
+	\mathcal L(\theta) &= \log \langle \psi_\theta | H| \psi_\theta \rangle - \log \langle \psi_\theta | \psi_\theta\rangle \\
+	& = \log \Tr[\rho_\theta H] - \log Z_\theta\\
+	\nabla_\theta \mathcal L(\theta) & = \frac{1}{\Tr[\rho_\theta H]} \nabla_\theta \sum_{ij} \rho_{ij} H_{ji} - 
+\end{align}
+Assume we minimize this loss function using gradient descent in continuous time 
+\begin{align}
+	\frac{d\theta}{dt} = \eta \nabla_\theta \mathcal L(\theta)	
+\end{align}
+\begin{align}
+	\frac{d|\psi_\theta \rangle}{dt} = \Big \langle \nabla_\theta |\psi_\theta \rangle , \frac{d\theta}{dt}  \Big \rangle  = \eta  \Big \langle \vec \nabla_\theta |\psi_\theta \rangle , \vec \nabla_\theta \mathcal L(\theta)  \Big \rangle 
+\end{align}
+Note that $\langle \cdot, \cdot \rangle$ acts on the algebra of $\vec \nabla_\theta$. This mean the density function evolves as 
+\begin{align}
+	\frac{d\rho}{dt} & = \frac{d}{dt} (|\psi_\theta\rangle \langle \psi_\theta |) \\
+	& = \nabla_\theta (|\psi_\theta\rangle \langle \psi_\theta |) \frac{d\theta}{dt}  \\
+	& = \eta^3 \Big \langle \left( \vec \nabla_\theta |\psi_\theta \rangle\right)\langle \psi_\theta | , \vec \nabla_\theta \mathcal L(\theta)  \Big \rangle  + \Big \langle | \psi_\theta \rangle \left( \vec \nabla_\theta \langle \psi_\theta | \right), \vec \nabla_\theta \mathcal L(\theta)  \Big \rangle 
+\end{align}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\end{document}

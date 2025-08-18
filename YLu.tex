@@ -1,0 +1,185 @@
+Consider a data matrices 
+\begin{align}
+	X =\begin{pmatrix}
+		 \vec x_1, ..., \vec x_n
+	\end{pmatrix} \in \mathbb R^{d \times n}
+\end{align}
+where $\mathbb R^d\ni \vec x_1, ..., \vec x_n \sim p(x)$ (iid). Then you can ask what's the sample covariance matrix $H := XX^T$ (or the Gram matrix $E = X^TX$).\\
+\\
+Obviously, if we assume this is true, RMT can provide some interesting remarks. However in Machine Learning, such matricies get put through non-linear functions (entry-wise), so we should study this regime.
+
+
+\paragraph{A first example (Taylor Expansions):}Consider the matrix
+\begin{align}
+	H = (h_{ij})_{i,j \leq n} = X^TX
+\end{align}
+where $h_{ij} \sim \mathcal O_p(1/\sqrt{n})$ (for $i \neq j$). Let $A  =\sigma(H)$ be applied entrywise, now Taylor expand per entry
+\begin{align}
+	A_{ij} = \sigma(h_{ij}) + \sigma'(0) h_{ij} + \frac{\sigma''(0)}{2	}h^2_{ij} + \mathcal O(h^3_{ij})
+\end{align}
+The last order terms are negligible in the $n \to \infty$ limit. However this definition relies on $\sigma$ to be differentiable, this is not always true (i.e. $\sigma = \text{ReLU}$)... 
+
+
+\paragraph{Beyond Taylor Expansions:}Lu poses that we assume non-linear matrices look like
+\begin{align}
+	\text{nonlinear model} = \text{linear model} + \text{noise}
+\end{align}
+asymptotically. In particular,
+\begin{align}
+	A & = \sigma(XX^T)\\
+	B & = \mu_0 \mathbb I + \mu_1 XX^t + \mu_2^* Z
+\end{align}
+and it's believed $A \simeq B$ (when something goes to infinity). We will develop the machinery to set $\mu_0, \mu_1, \mu_2$. This is called the \textbf{(gaussian) equivalence principle}.
+
+\subsubsection{Overview}
+\begin{enumerate}
+	\item Random matrices. Big takeaway: approximate rotational invariance of multilinear chaos. 
+	\item Beyond spectral equivalence: empirical risk minimization. Central limit theorems for wiener chaos.
+\end{enumerate}
+
+\section{Random Matricies}
+Suppose you want to learn a function $f(x)$ with domain on $S^{d-1}$ (hypersphere). You construct a training dataset $\mathcal D=\{(x_i, y_i = f(x_i)\}_{i=1}^n$.\\
+\\
+Consider a matrix 
+\begin{align}
+	A_{ij} = \begin{cases}
+		\sigma(\vec x_i^T \vec x_j), & i \neq j\\
+		0, & i = j
+	\end{cases}
+\end{align}
+We can decompose $\sigma(x) = \sum_i \mu_i h_i(x)$ where $h_i$ are the Hermite polynomials. Thus your matrix has an expansion
+\begin{align}
+	A = \sum_i \mu_i H_i
+\end{align}
+where \begin{align}
+	H_{ij}\begin{cases}
+		...
+	\end{cases}
+\end{align}
+\\
+\\
+If you let $n = \alpha d^\ell$ for some $\alpha > 0$ and $\ell \in \mathbb N$, you can show the decomposition has a very interesting eigenvalue spectrum.
+\begin{align}
+	A = \underbrace{\mu_0 H_0 + ... + \mu_{\ell-1} H_{\ell-1}}_{\text{lower-rank components}} + \underbrace{\mu_\ell H_\ell}_{\text{Marchenko-Pastur law}} + \underbrace{\mu_{\ell+1} H_{\ell+1} + \mu_{\ell+2}  H_{\ell+2} + ...}_{\text{independent GOE matrices}}
+\end{align}
+interestingly, $H_{\ell}$ has a Marchenko-Pastur law in the eigenvalue distribution. (It reminded me of Florentin's paper, but that was a Gumbel distribution).
+
+\section{Equivalanece for Non-linear matricies}
+Let you data vectors be sampled $\mathbb R^d \ni x_i \sim p(x)$ for $i \in [n]$, where $\mathbb E[x_i] = 0$ and $\mathbb E[x_i x_i^T] = \mathbb I$. Now let's construct a kernel matrix
+\begin{align}
+	A_{ij} = \begin{cases}
+		\frac{1}{\sqrt n} \sigma(x_i^T  x_j/\sqrt{d}), & i \neq j\\
+		0, & i= j
+	\end{cases}
+\end{align}
+where $\sigma: \mathbb R \to \mathbb R$.
+Our goal will be to understand the spectrum of $A$ when $n,d \gg 1$.
+\subsubsection{MP Distribution}
+Let $A = \frac{1}{\sqrt{n p}} G G^T - \text{diag}(\frac{1}{\sqrt{n d}} G G^T)$, where $G_{ij} \sim \mathcal N(0,1)$. This is a covariance matrix where the diagonal has been removed. The distribution (which is the Marchenko-Pastur distribution) of the spectrum $p(\lambda)$ has support on $[\sqrt{n/p} +\sqrt{p/n} -2, \sqrt{n / p} + \sqrt{p/n} + 2]$. There's a couple cases due to the interesting bounds on the support
+\begin{enumerate}
+	\item When $n \propto p$, the probability mass lies on a $\mathcal O(1)$ interval.
+	\item When $n \ll p$, you get a semi-circle law (traditional).
+	\item When $n \gg p$, you'll get a low rank matrix, so it'll be a smaller semi-circle law. 
+\end{enumerate}
+\subsubsection{Worked exampled of the non-linear case}
+Consider a model where $x_i \sim \text{Unif}(\{\pm 1\}^d)$, the activation function is  $\sigma(z) = (z^2 - 1) / \sqrt{2}$, and the matrix is
+\begin{align}
+	A_{ij} & = \left( \frac{x_i^T x_j}{\sqrt{d}}\right)^2 - 1\\
+	& = \frac{(\sum_{a=1}^d x_{i,a} x_{j,b})^2}{d} - 1\\
+	& = \underbrace{\frac{\sum_{a=1}^d x_{i,a}^2 x_{j,b}^2}{d}}_{=1} + 2 \frac{\sum_{a < b} x_{i,a}x_{i,b}x_{j,a}x_{j,b} }{d} - 1 & x_{i,a}^2 = 1\\
+	& = \frac{2}{d} \sum_{a < b} (x_{i,a} x_{i,b}) (x_{j,a} x_{j,b})
+\end{align}
+If you think of this as an inner-product
+\begin{align}
+	= \frac{1}{\sqrt{n d^2 / 2}} \langle f(x_i), f(x_j)\rangle 
+\end{align}
+where $f(x) = (x_1 x_2, x_1 x_3, ..., x_1 x_d, x_2 x_3, ..., x_{d-1} x_d)$ (particularly $f(x) : \mathbb R^d \to \mathbb R^{d(d-1)/2}$) (In probability and statistics, this function is the \textbf{chaos}, basically when you have to use embedding functions which blow up in dimension, that is chaos (to a probability person)). So to recap
+\begin{align}
+	A & = \frac{1}{\sqrt{n d^2 /2}} G^T G - \text{diag}(\star)\\
+	\text{s.t. }G & = \begin{pmatrix}
+		f_1 , .., f_n
+	\end{pmatrix} \in \mathbb R^{n \times d(d-1)/2}
+\end{align}
+where $\text{diag}(\star)$ is the the diagonal the matrix prior to it. Going forward let's call the dimension of the output of $f$, $d(d-1)/2 \equiv p$. 
+
+You should notice a couple of nice properties $\mathbb E[f(x)] = 0$ (due to entries being iid), and $\mathbb E[ff^T] = \mathbb I_p$. So, in approximation $f_i \approx \mathcal N(0, \mathbb I)$.  Now you can use the results from the previous section, you can characterize the distribution over the eigenvalues depending on the relationships between $n$ and $d$.
+\subsubsection{Higher order version of the previous example}
+Imagine taylor expanding the activation function $\sigma(x) = \sum_k c_k x^k$, we did the quadratic case, so what happens in the 3'rd order case?
+\begin{align}
+	\left( \frac{x_i^T x_j^3}{\sqrt d}\right) ^3 = \frac{(\sum_a x_{i,a} x_{j,a})^3}{d^{3/2}}  = \text{Combinatorial factors}
+\end{align}
+\begin{sidework}
+	You can instead expand in \textbf{Gegenbauer Polynomials} (which end up looking similar to Hermite polynomials) $\sigma(z) = \sum_k \mu_k q_k(z)$ (see L. \& Yau '22). These have nice properties
+\begin{align}
+	\mathbb E_{x \sim \text{Unif}(S^d)} [q_k(x) q_\ell (x)] = \mathds 1_{k=\ell}
+\end{align}
+where $x$ is sampled uniformly from the surface of a $d$ dimensional sphere, meaning 
+\begin{align}
+	q_k\left( \frac{x_i^T x_i}{\sqrt d}\right) = \frac{1}{\sqrt{N_k}} \langle Y_k (x_i), Y_k(x'_j)\rangle
+\end{align}
+where $Y_k$ are the sphereical harmonics, $N_k \sim \mathcal O(d^k)$ (there's a precise answer but here's the scaling). The expectation value of this as
+\begin{align}
+	\mathbb E[Y_k(x) Y^T_\ell(x)] = \begin{cases}
+		\mathbb I_{N_k}, & k=\ell\\
+		0, & k \neq \ell
+	\end{cases}
+\end{align}
+\end{sidework}
+
+
+Consider sampling $x_i \sim \text{Unif}(\sqrt{d} S^{d-1})$, and the activation function is $\sigma(z) = \sum_k \mu_k h_k(x)$ where $h_k$ are $\textbf{Hermite Polynomials}$. Then
+\begin{align}
+	h_k \left( \frac{x_i^T x_j}{\sqrt{d}}\right)  = \frac{1}{\sqrt{N_k}} \langle f_k(x_i) , f_k(x_j)\rangle + \mathcal O_p(1/\sqrt{d})
+\end{align}
+
+where
+\begin{align}
+	f_0 &= 1\\
+	f_1 &= x\\
+	f_2 &= (x_a x_b)_{a < b}\\
+	f_3 &= (x_a x_b x_c)_{a<b<c}
+\end{align}
+\subsection{How to prove the Gaussian Equivalence}
+So in the previous section, we basically justified a MP distribution would pop out because the first two moment looked like a unit Gaussian.  So now we ask the question, can we prove the equivalence? The key lies in \textbf{approximate rotational invariance}.
+\\
+\\
+Consider $f_k: \mathbb R^n \to \mathbb R^{N_k}$ and a vector $b \in \mathbb R^{N_k}$. A dumb quantity to inspect is the overlap $|b^T f_k(x)|$. You can then bound this via Cauchy Schwartz
+\begin{align}
+	|b^T f_k| \leq ||b|| ~ ||f_k||
+\end{align}
+However, if $f_k \sim \mathcal N(0, \mathbb I)$, then $b^T f_k \sim \mathcal N(0, ||b||^2)$. Therefore we have a condition for when $f_k$ is sampled from a Gaussian. This is called \textbf{Walsh Chaos}.
+\begin{align}
+	\boxed{|b^T f| \sim ||b||} \implies b^T f_k(x) / ||b|| = \mathcal O(1)
+\end{align}
+this is the approximate rotational invariance method. \\
+\\
+Before continuing, let's define this more rigorously. Consider $z = O_< (1)$, then $||z||_p = (\mathbb E[|z|^p])^{1/p} \leq C_p \leq \infty$. This means for all $\epsilon > 0$, there exists a $D >0$
+\begin{align}
+	\mathbb P(|z| >d^\epsilon ) \leq \frac{1}{d^D}
+\end{align}
+
+
+\section{In Context Learning}
+\begin{definition}
+	In context learning is the abilit9y of large language models to adapts to new tasks by simply being provided with examples / patterns within their input context, without updating their weights.
+\end{definition}ddd
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

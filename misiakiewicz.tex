@@ -1,0 +1,135 @@
+\section{Overview}
+\begin{itemize}
+	\item Reductions
+	\item Kernel methods
+	\item Noisy Gradient Descent
+	\item SQ Algorithms
+	\item Low degree polynomials (if we have time)
+\end{itemize}
+
+\section{Supervised Learning}
+Here is the mathematical setup for supervised learning.\\
+
+Consider a dataset $\mathcal D=\{(y_i, x_i)\}_{i \leq n} \sim_{iid} \mathcal P(\mathcal Y \times \mathcal X)$, where $x_i \in \mathcal X$ (called the covariate space) and $y_i \in \mathcal Y$ (called the label space).\\
+\\
+We have a loss function $\ell : \mathcal Y \times \mathcal Y \to \mathbb R_{\geq 0}$. The goal is to fit a model $\hat f: \mathcal X \to \mathcal Y$, which minimizes the \textbf{population risk}
+\begin{align}
+	\mathcal R(\hat f, \mathcal D) \equiv \mathbb E_{(y,x)_\sim \mathcal D} [\ell (y, \hat f(x))]
+\end{align}
+\begin{sidework}
+	\emph{Example:} Let $\mathcal X = \mathbb R^d, \mathcal Y = \mathbb R$, and the loss function is the residuals $\ell=  (y - \hat y)^2$. Your population risk can be the mean squared error $\mathcal R = \mathbb E[(y - \hat f)^2]$. 
+	We define the \textbf{excess test error}
+	\begin{align}
+		\mathcal R(\hat f, \mathcal D) & = \mathcal R(\hat f, \mathcal D0 - \inf_{f} \mathcal R(\ell, \mathcal D)\\
+		& = \mathbb E[(h(x) - \hat f)^2] , ~~\text{s.t. } h(x) = \mathbb E[y|x]
+	\end{align}
+\end{sidework}
+To start constructing bounds, we must apply a little more setup. In this discipline, the workflow goes as follows:
+\begin{enumerate}
+	\item Choose a model class
+	\item Setup the empirical risk minmization problem
+	\item See what is achievable via some gradient descent type algorithm
+\end{enumerate}
+
+
+To start constructing bounds, let's assume our model is within some function class $\hat f \in \mathcal F = \{f(x;\theta) : \theta \in \mathbb R^p\}$. And going forward, we'll notate the population risk as 
+\begin{align}
+	\mathcal R(\theta) \equiv \mathcal R(f(\cdot; \theta), \mathcal D)	
+\end{align}
+We also don't have oracle access to the true distribution $\mathcal P(\mathcal Y \times \mathcal X)$, so we will have to use an \textbf{empirical risk}
+\begin{align}
+	\hat{\mathcal R}_n(\theta) = \frac{1}{n} \sum_{i=1}^n \ell(y_i, f(x_i; \theta))\\
+	\hat \theta = \text{argmin}_\theta \{\hat R_n(\theta) + \pi (\theta)\}
+\end{align}
+where $\pi$ is a regularizer (for example, you can do Ridge which is $\pi(\theta) = ||\theta||_2^2$).
+\\
+\\
+There are three problems which arrises in the supervised learning setup.
+\begin{enumerate}
+	\item \textbf{Expressivity:} The model class $\mathcal F$ is not expressive enough. That is you can't capture the relationship between $y$ and $x$ well enough. However, most neural networks are expressive enough, so we can ignore this issue.
+	\item \textbf{Sample size:} In practice, your empirical risk is performing a MCMC approximation of the population risk. Meaning  $\hat R_n(\theta) \slashed \simeq \mathcal R(\theta)$. This means $\hat f$ will fail to generalize.
+	\item \textbf{Runtime:} It's computational hard to minimize $\hat R_n(\theta)$ as it is highly non-convex.
+\end{enumerate}
+We will focus on the third, as they play nice with lower bounds.
+
+
+\section{Hardness of Training NNs}
+\subsection{3 Node Neral Network}
+[Judd '87] [Blum \& Rivest '88]. Assuming $\mathsf{P} \neq \mathsf{NP}$. There is no polynomial time algorithm that (unconditonally) minimizes the empirical risk.\\
+\\
+Assume you have a function $f(x_i; \theta) = \text{sgn}(\langle w_i, x\rangle + b_i)$, where the ERM
+\begin{align}
+	\min_\theta \frac{1}{n} \sum_i (y_i - f(x_i; \theta))^2
+\end{align}
+where the dataset is $y_i \in \{\pm \}$ , $x_i \in \{0,1\}^d$.
+
+\emph{Question:} Given a set of $\mathcal O(n)$ data points, does there exists a 3 node NN  that interpolates this data? \emph{Answer [Blum, Rivest]:} Assuming $\mathsf P \neq \mathsf{NP}$, training a 3 node NN is NP-complete.
+
+\begin{sidework}
+\emph{Set Splitting Problem:}
+	Given a finite set $S$ and a collection of subset $ C = \{C_j : C_j \subseteq S\}$. Does there exists a partition of $S$ in $S_1 \& S_2$ s.t. $C_j \slashed \subseteq S_1$ and $C_j \slashed \subseteq S_2$ for all $C_j \in C$? That answer is no.
+
+To prove this, just have to map $(S, C) \to (y_i, x_i)_{i\leq n}$, and you can use the previous result to finish the proof.
+\end{sidework}
+Does this mean that machine learning is doomed? In other words, is this a compelling result? Well:
+\begin{enumerate}
+	\item This is a worst case result
+	\item And we've assumed a very particular architecture.
+\end{enumerate}
+As a rebuttal, in machine learning
+\begin{enumerate}
+	\item Average case hardness $\neq$ worst case hardness
+	\item This previous example was proper, in machine learning we are often doing improper learning.
+\end{enumerate}
+\begin{definition}
+	[(Im)proper Learning] Consider the function class $\mathcal H \subseteq \{h : \mathcal X \to \{\pm 1\}\}$.
+	\begin{itemize}
+		\item \textbf{Proper Learning} is when $(y_i, x_i) \sim_{iid} \mathcal D$. The algorithm needs to output $\hat h \in \mathcal H$, s.t. $\mathcal R(\hat f , \mathcal D) \leq \epsilon$.
+		\item \textbf{Improper Learning} is when $\hat h \notin \mathcal H$ 
+	\end{itemize}
+	Basically in proper learning, you constrain the class of models to be a subset of what is defined by the data. In improper learning, you can (for example) over parameterized, and then find solutions this way.
+\end{definition}
+Once we realize there's a difference between proper / improper learning, we are saved! We can show that hardness of proper learning does not imply hardness of improper learning.
+
+\begin{sidework}
+	\emph{Example [Learning Degenerative Normal Forms]:} Let $x = (x_1, x_2, ...) \in \{0, 1\}^d$. Let a normal form be
+\begin{align}
+	h(x) & = M_1 \wedge M_2 \wedge M_3\\
+	\text{s.t. } M_i & = L_{i1} \vee L_{i2} \vee ... \vee L_{i n_i}
+\end{align}
+where $\wedge$ is a logical AND, and $\vee$ is logical OR.\\
+\\
+A result of this is there is no polynomial time algorithm that can properly learn 3-DNF. However, if you allow for improper learning, you can learn it in polynomial time.
+\end{sidework}
+
+\section{Hardness of Improper Learning}
+We've shown hardness of proper learning, can we show where improper learning breaks down?
+\begin{definition}
+	[Intersection of $k$ hard-spaces] Let $x \in \{\pm 1\}^d$
+	\begin{align}
+		h(x) = \prod_{i=1}^k \mathds 1[\langle w_j, x\rangle > 0]
+	\end{align}
+\end{definition}
+Under assumption of hardness. For all $\epsilon > 0$, the internsection of $d^\epsilon$ hard-spaces is hard to learning even improperly.\\
+\\
+\emph{Remark:} $h(x)$ can be rewritten a 2-hidden layer ReLU, with 2k+1 neurons. So it seems that teacher-student models will fail to converge (in polynomial time), even when the teacher is a small model. Wow!
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\section{Reductions}
+

@@ -192,9 +192,49 @@ Lu then spends the rest of the lecture reformulating various problems into this 
 
 
 
+\section{August 14th}
+In the spirit of Jane Street being a sponsor of the event, Lu will go over Hamilton Jacobi Bellman equations! Recall the HJB equation
+\begin{align}
+	- \gamma V(x) + \min_{u \in \mathbb R^m} \{\mathcal L_u  + \ell (x,u)\}= 0\\
+	\text{s.t. }dX_t = b(X_t) dt + \sqrt{2} \sigma(X_t) dW_t
+\end{align}
+where $\mathcal L_u$ is the infinitesimal generator of the stochastic process, $X_t \in \mathbb R^d, b(X_t) \in \mathbb R^d,$ and $\sigma(X_t) \in \mathbb R^{d\times d}$.
 
+\begin{sidework}
+	Lu goes over a cute review of stochastic differential equations.
 
-
+	Consider an ODE $dX_t = b(X_t) dt$. Say, you want to ask what is the gradient of $Y_t = V(X_t)$, obviously it's $\nabla_x V \cdot b(X_t)$ (via chain rule). But you can also derive this by asking what's the total derviative of the quantity and expanding, but we assume the usual calculus thing $dt \to 0$, so higher order terms $\mathcal O(dt^2)$ are negligible.
+	
+	If you do this for a SDE, all you need to know is $\mathcal O(dW_t^2) = \mathcal O(dt)$, then take the total derviative again, and kill terms $\mathcal O(dt^{3/2})$ or higher, you'll recover Ito's formula
+	\begin{align}
+		dV(X_t) = \nabla_x V (X_t) (b(X_t) dt + \sqrt{2}\sigma(X_t) dW_t) + \Tr(\nabla_x^2 V \sigma(X_t) \sigma(X_t)^T ) dt
+	\end{align}
+	Very cute.
+\end{sidework}
+So let's see what happens when we compute $dV(X_t)$
+\begin{align}
+	dV(X_t) = (\Delta  + b\cdot \nabla) V(X_t) dt + \sqrt{2} \nabla V(X_t) dW_t
+\end{align}
+Now ask, what is $\mathbb E[dV(X_t)] = d\mathbb E[V(X_t)]$
+\begin{align}
+	d\mathbb E[V(X_t)] = (\Delta + b \cdot \nabla) \mathbb E[V(X_t)] dt
+\end{align}
+Let's define $\mathbb E[V(X_t)] \equiv u(x,t)$, then this starts to look like a heat equation!
+\begin{align}
+	\partial_t u = (\Delta + b \cdot \nabla) u	
+\end{align}
+Now let's just assert a boundary conditoin $u(t=T,x) = h(x)$, this translates to $u(0,x) = \mathbb E h(X_T)$.\\
+\\
+Ok now let's consider a situation where the state equation has access to a control line
+\begin{align}
+	dX_t = b(X_t, u_t)dt + \sqrt{2} \sigma(X_t, u_t) dW_t
+\end{align}
+And we want to minimize a cost $J$, that is we want to find the best control line $u$
+\begin{align}
+	J(x,u)&  = \mathbb E \left[ \int_0^\infty e^{-\gamma t} \ell(x_t, u_t) dt | X_0 = x \right]\\
+	V(x) & = \inf_u J(x,u)
+\end{align}
+For simplicity, let's assume $u$ must be Markovian, that is $u_t = u(t,X_t)$. By 
 
 
 
