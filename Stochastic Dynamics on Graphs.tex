@@ -1,0 +1,189 @@
+%%% Document Formatting
+\documentclass[12pt,fleqn]{article}
+\usepackage[a4paper,
+            bindingoffset=0.2in,
+            left=0.75in,
+            right=0.75in,
+            top=0.8in,
+            bottom=0.8in,
+            footskip=.25in]{geometry}
+\setlength\parindent{10pt} % No indent
+
+%%% Imports
+% Mathematics
+\usepackage{amsmath} % Math formatting
+\numberwithin{equation}{section} % Number equation per section
+\DeclareMathOperator{\Tr}{Tr}
+
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{definition}{Definition}
+\newtheorem{proof}{Proof}
+\newtheorem{lemma}{Lemma}
+\newtheorem{example}{Example}
+
+\usepackage{amsmath}
+\usepackage{amsfonts} % Math fonts
+\usepackage{amssymb} % Math symbols
+\usepackage{mathtools} % Math etc.
+\usepackage{slashed} % Dirac slash notation
+\usepackage{cancel} % Cancels to zero
+\usepackage{empheq}
+\usepackage{breqn}
+
+\newcommand{\expect}[1]{\mathbb{E}\left[#1\right]}
+
+
+% Visualization
+\usepackage{graphicx} % for including images
+\graphicspath{ {} } % Path to graphics folder
+\usepackage{tikz}
+
+
+
+%%% Formating
+\usepackage{hyperref} % Hyperlinks
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+    pdftitle={Overleaf Example},
+    pdfpagemode=FullScreen,
+    }
+\urlstyle{same}
+
+\usepackage{mdframed} % Framed Enviroments
+\newmdenv[ 
+  topline=false,
+  bottomline=false,
+  skipabove=\topsep,
+  skipbelow=\topsep
+]{sidework} %% Side-work
+
+\usepackage{lipsum} % Lorem Ipsum example text
+
+%%%%% ------------------ %%%%%
+%%% Title
+\title{Mean Field Dynamics on Graphs}
+\author{Clark Miyamoto (cm6627@nyu.edu)}
+\date{\today}
+\begin{document}
+
+\maketitle
+\section{Mean Field Dynamics}
+Consider a mean field dynamics
+\begin{align}
+	dX_i^{(n)}(t) = b(t, X_i^n, \mu^n) dt + dB_i(t), ~~ i = 1,...,n
+\end{align}
+where $\mu^n = \frac{1}{n} \sum_{i=1}^n \delta_{X_i^{n}} \in \mathcal P(\mathcal C))$ (it's a sum of delta functions which evaluate to the current position of particle $i$). Since mean field is in the title, you can imagine you're taking $n \to \infty$. So the question becomes, what is $\lim_{n \to \infty}  dX_i^{(n)}(t)$ and $\lim_{n \to \infty} \mu^n$.\\
+\\
+What you can show is that
+\begin{align}
+	(X_1^{(n)}, ..., X_k^{(n)}) \to^{(d)} (Y, ..., Y)
+\end{align}
+where $Y$ is defined by
+\begin{align}
+	dY(t) = b(t,Y, \mu) dt + d\tilde B(t)
+\end{align}
+where $\mu = \text{Law}(Y)$. Think about how weird this is, your trajectories depend on your distribution...\\
+\\
+What you can show is
+\begin{align}
+	\lim_{n \to \infty }\mathbb E[ f(X_1^n ) g(X_2^n)]  = \mathbb E[f(Y) ] \mathbb E[g(Y)]
+\end{align}
+So there's some sort of self-averaging going on.
+
+\section{Mean Field Dynamics on a Graph}
+\subsection{Setup}
+So imagine your particles interaction dependent on some graph structure $G = ([n], E^n)$. Notation: $\partial_{\nu}$ means the neighbors of particle $\nu$ endowed by the graph structure.
+\begin{align}
+	dX_\nu^{n}(t) = b(t, X_\nu, X_{\partial_\nu}) dt + dB_\nu (t), ~~ \nu \in G
+\end{align}
+basically your dynamics depend on yourself and your neighbors. \\
+\\
+\textbf{Goal:} Can you establish a similar framework here, that is make sense of the infinite particle? Can we see if $\frac{1}{n} \sum_{\nu \in G} \delta_{X_\nu^n} \to \mu$? And can make a statement on $X_i^n \to ?$ ?
+\subsubsection{Graph Structure in Infinite Node Limit}
+He went through a lot of pain to do this. I am not a mathematician, so I don't care. But basically, it's well defined.
+
+\subsubsection{Dynamics in Infinite Node Limit}
+Consider some graph $G = ([n], E^n)$, and some dynamics
+\begin{align}
+	dX_\nu(t) = b(t, X_\nu, X_{\partial_\nu}) dt + dB_\nu(t)
+\end{align}
+We find two different limits (due to the ways your take the graph to a high-node limit, i.e. do you average over the root, or do you average over the disorder in the graph topology, or both?)
+\begin{enumerate}
+	\item $G^n \to G$ locally weakly in distribution, then $X^{G^n} \to X$ locally weakly in distribution.
+	\item $G^n \to G$ in probability, then $X^{G^n} \to X$ in probability. However this one is nicer, because $\frac{1}{n} \sum \delta_{C_{\nu}(X^n)} \to^{\mathbb P} \text{Law}(X^G)$. So we'll only work with this one because your mean field approximation is well defined here. This one you also get the self-averaging as well
+	\begin{align}
+		\lim_{n\to \infty} \mathbb E[f(G^n, \circ^n_1) g(G^n, \circ^n_2)] = \mathbb E[f(G, \emptyset )] \mathbb E[g(G, \emptyset)]
+	\end{align}
+	where $G$ is the graph, and $\emptyset$ is the root of the graph.
+\end{enumerate}
+\subsection{Example: A line}
+Consider a graph which is just a straight line
+\begin{align}
+	...-0-\underbrace{0-0-0}_{\text{Here}}-0-...
+\end{align}
+Consider looking at the time evolution 
+\begin{align}
+	dX_\nu(t) = b(t, X_\nu, X_{\partial_\nu}) dt + dB_\nu(t)
+\end{align}
+Let's look at the root
+\begin{align}
+	dX_{\emptyset}(t) & = b(t,  X_{\emptyset},  X_{\{\pm 1\}}) dt + dB_{\emptyset}(t)\\
+	& = \mathbb E[b(t,  X_{\emptyset}, X_{\{\pm 1\}}) | X_{\{-1, 0, 1\}}] dt + dB(t)
+\end{align}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\end{document}
+
+
+

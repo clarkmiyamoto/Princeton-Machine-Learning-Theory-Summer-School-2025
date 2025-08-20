@@ -1,0 +1,258 @@
+
+
+Let's introduce a problem which we'll work on throughout the week. We'll introduce the \textbf{Spiked-Wigner} problem. This is a vector $x \in \mathbb R^d$, where $x \sim p_x(x)$, you want to infer it from observation
+\begin{align}
+	Y = \sqrt{\frac{\lambda}{d}} x^T x  + W
+\end{align}
+where $W \sim \text{GOE}(d)$ ($W_{ij} \sim \mathcal N(0,1)$). We are interested in the $d \to \infty$ limit.\\
+\\
+If I tell you $p_x(x)$, then you get a prior for $x$, and we can be bayesian.
+
+\subsection{Naive Algorithm}
+Start with $x^0 \in \mathbb R^d$. Compute
+\begin{align}
+	h^t & = A x^t\\
+	x^t & = f_t(h^t)
+\end{align}
+where $A$ is a matrix, $A_{ij} = A_{ji} \sim U(0,1/d)$. It's very tempting to think $h^t \propto z$ (Gaussian vector) for all time. However after one time-iteration, $x$ becomes correlated with $A$, so you loose this property... However, I'd love for $h^t \propto z$, it's so nice. 
+
+SO let's see if we can massage it. Let's set $f_t(h) = h$
+\begin{align}
+	h^1 & = A x^0\\
+	h^2 & = A^T A x \simeq (\mathbb I + \tilde A ) x^0 = \tilde A x_0 + x_0
+\end{align}
+
+\subsection{Approximate Message Passing}
+Let's instead do the following algorithm
+\begin{align}
+	h^t & = A x^t - \underbrace{b_t x^{t-1}}_{\text{Onsager term}}\\
+	x^t & = f_t(h_t) 
+\end{align}
+where $b_t = \frac{1}{d} \sum_i \partial_i f(x)$ (where $\partial_i = \frac{\partial}{\partial x_i}$, the component-wise gradient). What's really nice, is your iterations now go
+\begin{align}
+	h^1 & = A x^0\\
+	h^2 & = A^T A x^0 = \tilde A x_0 + x_0 - x_0 = \tilde A x_0
+\end{align}
+So if you take the limit where $d \to \infty$. Then you have the following
+\begin{align}
+	h^t =^{(d)}  \sqrt{q^t} z
+\end{align}
+where $z \sim \mathcal N(0,1)$. Meaning if you take the expectation of some sufficient statistic $g$ acting on $h$
+\begin{align}
+	\mathbb E[g(h)] = \mathbb E[g(\sqrt{q} z)]
+\end{align}
+Since we've shown $h$ is recursively related by it's previous step, this defines the variance. Meaning $q_t = \mathbb E[f^2_{t+1}(z\sqrt{q_t})]$. Physicists have been thinking of this as a fixed point, not an iteration.\\
+\\
+But anyways, perhaps you should replace $A$ with $Y$, and then choose $f$ s.t. $\mathbb E [x^t] \to x$. Meaning you've created an algorithm which picks out the hidden signal!
+
+
+\subsection{Approximate Message Passing for Spiked Wigner Model}
+Consider the algorithm
+\begin{align}
+	h^{t+1} & = \tilde Y x^t - b_t x^{t-1} = A \hat x^t - b_t \hat x^{t-1} + \sqrt{\lambda} \frac{x^{*T} x^*}{d} \hat x^t\\
+	x^t & = f_t(h^t)
+\end{align}
+we'll call $m_t = \hat x^t \cdot x^* / d$, this is the \textbf{overlap} between the iterative scheme and true signal. Now we can write
+\begin{align}
+	h^{t+1} = A \hat x^t - b_t \hat x^{t-1} + \sqrt{\lambda } m^t x^*
+\end{align}
+Define quantities
+\begin{align}
+	\tilde h & := A x^t - \tilde b_t \hat x^{t-1}\\
+	x^t & = f_t(\tilde h_t + \sqrt{\lambda} m x^t) = \tilde f_t(\tilde h_t)
+\end{align}
+Notice, we've recovered the self-consistency condition! This yields the stat equation (self-consistency condition) for AMP
+\begin{align}
+	h^t & = \sqrt{q^t }z + \sqrt{\lambda}m^t x^*\\
+	q^{t+1} & =  \mathbb E[f^2_t(\sqrt{q^t} z + \lambda m x^*)]\\
+	m^{t+1} & = \mathbb E_{x^*, z}[x^* f_t(\sqrt{q^t} z + \sqrt{\lambda}m^t  x^*)]
+\end{align}
+So now how do we find $x^*$? Well, we have a $h^t$ which is a linear combination between $z$ and $x^*$, so you can use Tweedy's formula to find the best estimate (which minimizes mean squared error)
+\begin{align}
+	p(x|h) = \mathcal N( h^t / \sqrt{\lambda}m^t , q^t / \lambda m^{t2})
+\end{align}
+Which means
+\begin{align}
+	f_t(h) = \frac{\mathbb E[x p_x(x) \mathcal N(h/\sqrt{\lambda} m^t, q^t / \lambda m^{2t})]}{\mathbb E[p_x(x) \mathcal N(\cdot, \cdot)]}
+\end{align}
+\subsection{Nishimori Relation}
+If you're doing any Bayes estimation
+\begin{align}
+	\boxed{\mathbb E_{y, x, x^*} [g(x, x^*) = \mathbb E_y \mathbb E_{x^{(1)} | y} \mathbb E_{x^{(2)}| y} [ g(x^{(1)}, x^{(2)}]}
+\end{align}This is trivial via Bayes theorem. Lol.\\
+\\
+Via this relationship, you can show for the previous model $m^t =  q^t$.
+
+\subsection{Example: Ising Spins}
+Let $x_i^* = \pm 1$ (these are Ising spins), then you recover (exaclty) the mean field self-consistency equation
+\begin{align}
+	f_t(h) = \tanh(\sqrt{\lambda} h)
+\end{align}
+If you know the algorithm converges, then you can say
+ \begin{align}
+ 	m^{t+1} = \mathbb E[\tanh^2 (\sqrt{\lambda} z + \lambda m x^\sigma)]
+ \end{align}
+ You can see that there's a phase transition, where $m$ is non-zero when $\lambda > 1$. Wow! So there's a bold claim that this is the bayesian optimal result.
+\begin{sidework}
+	It's an open-problem to show this algorithm converges for all initalizations.
+\end{sidework}
+
+\subsection{Example: BR Model}
+This is when $x^*$ is
+\begin{align}
+	\mathbb P[x^* = 0] & = 1-\rho\\
+	\mathbb P[x^* = 1] & = \rho / 2\\
+	\mathbb P[x^* = -1] & = \rho / 2
+\end{align}
+What's fascinating, is that you still get the phase transition at $\lambda = 1$...
+
+\subsection{Example: PCA}
+Set your Bayes optimal denoiser function to be
+\begin{align}
+	\hat x = f_t(h) = \frac{h \sqrt{d}}{|| h||_2}
+\end{align}
+Going back to the AMP algorithm
+\begin{align}
+	h^{t+1} & = \tilde Y x^t - b_t \hat x^{t+1}\\
+	& = \tilde Y \frac{h^t \sqrt{d}}{|| h ||_2	} - \frac{\sqrt{d}}{|| h^t||_2} \frac{h^{t-1} \sqrt{d}}{||h^t||_2}
+\end{align}
+Let's assume this converges.
+\begin{align}
+	h = \tilde Y \frac{h \sqrt{d}}{|| h ||_2	} - \frac{\sqrt{d}}{|| h||_2} \frac{h \sqrt{d}}{||h^t||_2}
+\end{align}
+This implies
+\begin{align}
+	\left ( \frac{\sqrt{d}}{|| h||_2} + \frac{||h||_2}{\sqrt{d}} \right) h = \tilde Y h
+\end{align}
+This means that, $h$ is a eigenvector, with eigenvalue  $\frac{\sqrt{d}}{|| h||_2} + \frac{||h||_2}{\sqrt{d}}$. So if you can get the highest eigenvalue by doing power iteration.\\
+\\
+Making use a Tweedy's formula
+\begin{align}
+	h = z + \sqrt{\lambda} m x^*
+\end{align}
+You find $||h||_2 = \sqrt{1 + \lambda m^2}$, you now find your eigenvector equation becomes
+\begin{align}
+	\left ( \sqrt{1 + \lambda m^2} + \frac{1}{\sqrt{1 + m^2}}\right) h = \tilde Y h
+\end{align}
+You now find a BBAP transition, where your spectrum of $\tilde Y$, which is given by  $\left ( \sqrt{1 + \lambda m^2} + \frac{1}{\sqrt{1 + m^2}}\right)$.
+
+
+\section{Cavity Method on SK Model}
+Consider hte SK model
+\begin{align}
+	p(s) = \frac{1}{Z} \exp \left(\beta \sum_{i\leq j} s_i s_j J_{ij} \right)
+\end{align}
+where $s = \{s_1, ..., s_N\}$. You assume there's disordered in the couplings $J_{ij} \sim \mathcal N(\frac{\sqrt{\lambda}}{d}, \frac{1}{d})$. To do the cavity method, consider a system where the $i$'th spin is removed
+\begin{align}
+	p(s_i) \propto \exp(\beta \sum_j s_i J_{ij} m^{(c)}_j)
+\end{align}
+You recover a self-consistency equation 
+\begin{align}
+	m_i = \tanh (\beta \sum_j J_{ij} m_j^{(c)})
+\end{align}
+If you taylor expand $m_j$
+\begin{align}
+	m_j & = m_j^{(c)} + \frac{\partial m_j}{\partial m_j^{(c)}} + ...\\
+	& = m_j^{(c)} + (1 - m^2_j) J_{ij} \beta m_i + ...
+\end{align}
+plugging this back into the self-consistency equation
+\begin{align}
+	\vec m = \tanh (\beta J \vec m - \vec m \beta \mathbb E[1 - \vec m^2])
+\end{align}
+This yields the \textbf{TAP equation}. If you attempt to iteratively solve this equation, you recover our previous result from yesterday... Wow!
+
+\subsection{Free Energies \& How to Prove Them}
+Yesterday, we claimed that our solution was a Bayes optimal result. We can prove this by making a free-energy argument...\\
+\\
+Recall yesterday's problem
+\begin{align}
+	Y = x^t x \sqrt{\frac{\lambda}{d}} + \xi
+\end{align}
+You get the probability distribution of $Y | x$, and you can ask the Bayes' question, what's the probability of observing $x | Y$
+\begin{align}
+	P(x | Y)  & = \propto p(x) \exp \left(- \frac{1}{2} \sum_{i \leq j} (y_{ij} - x_i^* x_j^* \sqrt{\frac{\lambda}{d}})^2 \right)\\
+	&= \frac{1}{Z_d(y)} \exp\left (-\frac{\lambda}{2d} \sum_{i < j} x_i^2 x_j^2 + \sqrt{\frac{\lambda}{d} \sum_{i \leq j } y_{ij} x_i x_j} \right)
+\end{align}
+So we are interested in the \textbf{free-energy density}
+\begin{align}
+	f = - \frac{1}{d} \log Z_d(y)
+\end{align}
+What's nice is this quantity is related to the mutual information between $x$ and $Y$. What's really nice  tho, is this system is \textbf{self-averaging}, meaning in the limit $d \gg 1$, it will converge to its mean; so let's just take the mean now.
+\begin{align}
+	f = \mathbb E \left[ \frac{1}{d} \log Z_d(y) \right]
+\end{align}
+\begin{sidework}
+	Obviously, this is difficult to do, so we can perform the \textbf{replica trick}.
+\begin{align}
+	\lim_{n \to 0} \frac{Z^n - 1}{n} = \log Z \implies \frac{\mathbb E[Z^n] - 1}{n} = \mathbb E[\log Z]
+\end{align}
+where we take $n$ to be discrete, evaluate $\mathbb E$, and then analytically continue it down to zero. This is a non-rigorous, so perhaps there are other methods to do this?
+\end{sidework}
+For this problem, assume that you used replica trick to get an answer. Now you'll use other methods to rigorously prove it. So we'll use \textbf{Guenne Interpolation (Smart Path)}.
+\\
+\\
+What you'll do is write a time-dependent Hamiltonian, where at $t = 0$ it'll be something super easy to compute $H_{easy}$, and at $t = 1$ it'll be the problem we're computing $H_{real}$.
+\begin{align}
+	f_{t=0} + \mathbb E \int _0^1 \frac{\partial(- \log Z)}{\partial t} = - \frac{1}{d} \mathbb E[\log Z_d]
+\end{align}
+Usually this only gives you a bound, but in simple cases it can solve the problem exactly.\\
+\\
+For this problem we choose the following two as our Hamiltonians
+\begin{enumerate}
+	\item Vector denoising (easy problem): 
+	\begin{align}
+		\tilde x_i = \sqrt{\lambda '} x_i^* + \xi_i, ~~ i=1,...,d
+	\end{align}
+	\item The true problem
+	\begin{align}
+		y_{ij} = \sqrt{\frac{\lambda}{d}} x_i^* x_j^* + \xi_{ij}
+	\end{align}
+\end{enumerate}
+This yields the probability distribution of the interpolated Hamiltonian
+\begin{align}
+	p(x | y, \tilde x) \propto e^{H^{(0)} + H^{(1)}}
+\end{align}
+The partition function of the interpolated distribution is given by
+\begin{align}
+	- \mathbb E[\log Z_d] & = f_{DM} (m) + \int_0^1 dt  \frac{\lambda}{4} \mathbb E[ \langle (\frac{x^T x}{d} - m)^2 \rangle - \frac{\lambda}{2} [ \langle ( \frac{x^T x^*}{d} - m )^2 \rangle] - \frac{\lambda m}{d} + \frac{\lambda ...}{2}\\
+	f_{DM}(m) & = \mathbb E_{\xi, x^*} \log \mathbb E_{x} \exp \left( - \frac{\lambda m x^2}{2} + \lambda m x x^* + \sqrt{\lambda m } x\xi \right)
+\end{align}
+where $\mathbb E$ is average over disorder, and $\langle \cdot \rangle$ is the posterior average.\\
+\\
+If you apply the Nishmori identity, you should recall that the $x^T x$ and $x^T x^*$ terms under expectation are the same. Once you apply this, you find your answer is a perturbation away from the solution given by replica method
+\begin{align}
+	f & = f_{replica}(m) + \text{positive constant} \\
+	\implies f & \leq  f_{DM}(m) + \frac{\lambda m^2}{4}
+\end{align}
+Now you can solve for $f$ by doing saddle point approximation. Krzakala does a lot of justification why this works, but basically (as a physicists knows), usually you can make a concentration argument as the number of spins goes to infinity; meaning the saddle point solution is the true solution.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

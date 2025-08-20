@@ -53,8 +53,10 @@ There are three problems which arrises in the supervised learning setup.
 We will focus on the third, as they play nice with lower bounds.
 
 
-\section{Hardness of Training NNs}
-\subsection{3 Node Neral Network}
+\section{Reductions}
+Reductions are finding mapping between problems. If one problem is hard, then the correct map can show related problems are also hard. We'll show how to determine the 3 Node Neural Network is hard via a mapping.
+\subsection{Hardness of Training NNs}
+\subsection{3 Node Neural Network}
 [Judd '87] [Blum \& Rivest '88]. Assuming $\mathsf{P} \neq \mathsf{NP}$. There is no polynomial time algorithm that (unconditonally) minimizes the empirical risk.\\
 \\
 Assume you have a function $f(x_i; \theta) = \text{sgn}(\langle w_i, x\rangle + b_i)$, where the ERM
@@ -102,7 +104,7 @@ where $\wedge$ is a logical AND, and $\vee$ is logical OR.\\
 A result of this is there is no polynomial time algorithm that can properly learn 3-DNF. However, if you allow for improper learning, you can learn it in polynomial time.
 \end{sidework}
 
-\section{Hardness of Improper Learning}
+\subsection{Hardness of Improper Learning}
 We've shown hardness of proper learning, can we show where improper learning breaks down?
 \begin{definition}
 	[Intersection of $k$ hard-spaces] Let $x \in \{\pm 1\}^d$
@@ -115,6 +117,200 @@ Under assumption of hardness. For all $\epsilon > 0$, the internsection of $d^\e
 \emph{Remark:} $h(x)$ can be rewritten a 2-hidden layer ReLU, with 2k+1 neurons. So it seems that teacher-student models will fail to converge (in polynomial time), even when the teacher is a small model. Wow!
 
 
+\section{Kernel Methods}
+Let the tuple $(\Theta, \langle \cdot, \cdot \rangle)$ (which is a Hilbert space) be called a \textbf{feature space}. We have \textbf{feature maps} $\Phi: \mathcal X \to \Theta$, and we now consider the class of functions
+\begin{align}
+	\mathcal F = \{f(x; \theta) = \langle \theta, \Phi(x)\rangle_{\Theta} \}
+\end{align}
+A couple remarks
+\begin{itemize}
+	\item $\langle f(\cdot; \theta) , f(\cdot, \theta')\rangle_{\mathcal F} = \langle \theta, \theta' \rangle_{\Theta}$
+	\item $|| f(\cdot ; \theta )||^2_{\mathcal F} = ||\theta||_{\Theta}^2 $
+\end{itemize}
+\begin{sidework}
+	\emph{Example [Linear Regression]:} Let $\mathcal X = \mathbb R^d$ and $\Theta = \mathbb R^d$. Your feature map is $\Phi(x) = x$, and this mean your norm is $||f(\cdot; \theta)||_{\mathcal F} = ||\theta||_2$\\
+	\\
+	\emph{Example [Polynomial Regression]:} Let $\mathcal X = \mathbb R$, $\Theta = \mathbb R^{k + \ell}$, $\Phi(x) = (1, x, ..., x^k)$. Your model becomes $f(x; \theta) = \sum_i x_i \theta^k$\\
+	\\
+	\emph{Example [Infinite-Width 2 Layer Neural Network]:} This one is a bit more involved. First you must define a probability space $(\Omega, \mu)$. \\
+	
+	Your feature space is $\Theta = L^2(\Omega, \mu) = \{a: \Omega \to \mathbb R : \int a(\omega)^2 \mu (d\omega) < \infty\}$. Your inner-product on this space is just the continuous $L_2$, $\langle a, b\rangle_{\Theta}  = \int a(\omega) b(\omega) \mu(d\omega)$. Your feature map becomes $\Phi : \mathcal X \to L^2(\Omega, \mu)$, $x \mapsto \{\omega \mapsto \sigma(\langle x, \omega\rangle\}$. Your function class is $\mathcal F = \{f(x; a) = \int a(\omega) \sigma(\langle x, \omega\rangle ) \mu(d\omega) : a \in L^2(\Omega, \mu)\}$. 
+\end{sidework}
+\emph{Remark:} $(\mathcal F, \langle \cdot, \cdot \rangle_{\mathcal F})$ is a reproducing kernel Hilbert space (RKHS).
+\begin{definition}
+	[Reproducing Kernel Hilbert Space] Consider a function $K : \mathcal X \times \mathcal X \to \mathbb R$, which is symmetric in its argument, and positive semidefinite (where you imagine it's a infinite dimensional matrix, where indices are just the arguments).
+	\begin{align}
+		\forall x,f, ~ K(x, \cdot) \in \mathcal F \text{ s.t. } \langle f, K(x, \cdot) \rangle_{\mathcal F} = f(x)
+	\end{align}
+\end{definition}
+\begin{theorem}
+	[Moore-Arorgogin] For every symmetric, positive-definite kernel, there exists a unique RKHS.
+\end{theorem}
+\begin{sidework}
+	\emph{Example:} Consider the Feature Space $(\Theta, \Phi)$, we can construct a RKHS by taking the the kernel to be $K(x,x') = \langle \Phi(x), \Phi(x') \rangle_{\Theta}$.\\
+	\\
+	In linear regression
+	\begin{align}
+		K(x,x') = \langle x, x'\rangle\\
+	\end{align}
+	In polynomial regression
+	\begin{align}
+		K(x,x') = \sum_{s=0}^k (x x')^s
+	\end{align}
+	In Infinite Width 2-layer NN
+	\begin{align}
+		K(x,x') = \int \sigma(\langle x, \omega \rangle ) \sigma(\langle x', \omega\rangle ) \mu(d\omega)
+	\end{align}
+\end{sidework}
+\subsection{Kernel Method}
+Let's define a problem to solve. Consider a neural network $f(\cdot, \theta) = \langle \hat \theta, \Phi(\cdot)\rangle_{\Theta}$ 
+\begin{align}
+	\hat \theta = \argmin_{ \theta \in \Theta} \left \{ \frac{1}{n} \sum_{i=1}^n \ell(y_i, \langle \theta, \Phi(x_i)\rangle_{\Theta} ) + \lambda ||\theta||^2_{\Theta} \right\}
+\end{align}
+\begin{align}
+	\hat f = \argmin_{f \in \mathcal F} \left \{ \frac{1}{n} \sum_{i=1}^n \ell(y_i, f(x_i)) + \lambda ||f||_{\mathcal F}^2  \right \}
+\end{align}
+
+\begin{theorem}
+	[Representor Theorem] Any solution $\hat \theta \in \text{span} (\Phi(x_1), ..., \Phi(x_n)\} \subseteq \Theta$\\
+	\\
+	\emph{Proof:} Let $\Theta = V_{||} \oplus V_{\perp}$ where $V_{\perp} = \{\theta \in \Theta: \langle \theta, \Phi(x_i) = 0~~ \forall i \in [n] \}$ (it's perpendicular w.r.t. the inner product defined on $\Theta$). You can decompose 
+\begin{align}
+	||\theta||^2_{\Theta} = ||\theta_{||}||^2_{\Theta} +||\theta_{\perp}||^2_{\Theta}
+\end{align}
+Now compute
+\begin{align}
+	\min_{\theta = \theta_{||} + \theta_{\perp}} \{ \frac{1}{n} \sum_{i=1}^n \ell(y_i , \langle \theta_{||}, \Phi(x_i)\rangle + \underbrace{\langle \theta_{\perp}, \Phi(x_i)\rangle}_{\to 0, \text{ by def of } \ theta_{\perp}} ) + \lambda ||\theta_{||}||^2 + \lambda \underbrace{||\theta_{\perp}||^2 }_{\to 0}
+\end{align}
+QED?
+\end{theorem}
+\subsection{Kernel Trick}
+Consider $\theta = \sum_i a_i \Phi(x_i)$, which yields a model $f(x; \theta) = \sum_{i=1}^n a_ K(x, x_i)$. where $k_m(x) = (K(x, x_1), ..., K(x, x_n))$. The  minimization
+\begin{align}
+	\hat a = \argmin_{a \in \mathbb R^n} \{ \frac{1}{n} \ell(y_i, a^T K_n(x_i) + \lambda a^T K_n a\}
+\end{align}
+This is a sum of convex functions in $a$, so this is simple.
+\begin{align}
+	f(x; \hat a) = \sum a_i K(x, x_i)
+\end{align}
+This process is known as the \textbf{kernel trick}.
+
+\subsection{Domions Lower Bound}
+\begin{theorem}
+	Let $(\mathcal R, \langle \cdot, \cdot \rangle_{\mathcal R})$ be a Hilbert Space. Let $T \subset \mathcal R$ and $\text{dim}(T) = m$. Let $\mathcal H = \{h_1,..., h_M\} \subseteq \mathcal R$.
+	
+	The average approximation error
+	\begin{align}
+		\epsilon \equiv \frac{1}{M} \sum_{i=1}^M \inf_{f\in T} ||f - h_i||^2_{\mathcal R}
+	\end{align}
+	Then you can show the bound
+	\begin{align}
+		m \geq \frac{M}{||G||_{op}} (1-\epsilon)
+	\end{align}
+	where $g = (\langle h_i, h_j\rangle)_{i,j \in [n]}$
+\end{theorem}
+Now let's apply this lower bound.
+
+\begin{sidework}
+	\emph{Example:} Consider you get data $x \sim p_{\mathcal X}$, and $h(x) = \mathbb E[y | x]$. We construct a dataset $(y_i, x_i)_{i \leq n}$.
+	
+	You have a set of basis function $h \in \mathcal H \in \{h_1,..., h_M\}$. You now consider a subspace $T = \text{span} \{ K(\cdot, x_i) : i \in [m] \}$
+	
+	\begin{align}
+		\hat f_j \to || \hat f_j - h_j ||^2 _{L^2} \geq \inf_{f \in T} || f - h_j ||^2_{L^2}
+	\end{align}
+	You have 
+	\begin{align}
+		AAE \geq \frac{1}{M} \sum_j \inf_{f\in T} ||f - h_j||^2_{C^2} = \epsilon
+	\end{align}
+	To prove ${AAE} \leq \epsilon$, you must have number of samples $n\geq \frac{M}{||G|_{op}}(1-\epsilon)$, 
+\end{sidework}
+
+\section{Noisy Gradient Descent}
+Consider a model $f(\cdot; \theta): \mathcal X \to \mathbb R$ s.t. $\theta \in \mathbb R^p$. Assume this model is differentiable, that is $\nabla_\theta f(x; \theta)$ exists for all $x,\theta$. Our loss is a mean-squared error $\ell(y , \hat Y) = (y - \hat y)^2$, meaning the population risk will be $\mathcal R(\theta) = \mathbb E_{\mathcal D}[(y - f(x;\theta))^2]$. We have diagnostics regression fit $h(x) = \mathbb E_{\mathcal D}[y  |x]$ and an excess risk $\mathcal R_h (\theta) = ||f(\cdot;\theta) - h||^2_{L^2}$.
+
+Today, we'll consider minimizing the population risk using \textbf{online SGD}, this is the following algorithm
+\begin{itemize}
+	\item Initialize the weights from some distribution $\theta^0 \sim p_0$
+	\item At each step $k$
+	\begin{itemize}
+		\item Sample data $(y_k, x_k)\sim \mathcal D$
+		\item Do a weight update according to the gradient 
+		\begin{align}
+			\theta^{k+1} & = \theta^{k} - \eta_k \nabla_\theta \ell(y_k, f(x_k, \theta^k))\\
+			& = \theta^k + \eta_k \underbrace{(y_k - f(x_k ; \theta^k)) \prod_{B(O,R)} \nabla_\theta f(x_k; \theta^k)}_{\equiv - \Delta (\theta^k; y^k , x^k)}\\
+			& = \theta^k - \eta_k \underbrace{g(\theta^k)}_{\text{drift}} - \eta_k \underbrace{(\Delta(\theta^k; y^k, x^k) - g(\theta^k))}_{\text{noise / Martingale}}
+		\end{align}
+		where $g(\theta^k) = \mathbb E_{(y_k, x_k) \sim \mathcal D}[\Delta(\theta^k ; y_k, x_k)]$
+	\end{itemize} 
+\end{itemize}
+Remarks
+\begin{itemize}
+	\item $z = \frac{1}{\sqrt{\eta}}$
+	\item Notation: $g_h(\theta^k) \equiv g(\theta^k)$
+\end{itemize}
+You also have \textbf{noisy gradient descent}, this is a slightly different algorithm
+\begin{enumerate}
+	\item Sample an initial weight configuration $\theta^0 \sim p_0$
+	\item Perform a gradient update $\theta_h^{k+1} = \theta_h^{k} - \eta_k g_h(\theta^k) + \eta_k \xi_k$, where $\xi_k \sim \mathcal N(0, \sigma^2 \mathbb I_p)$
+\end{enumerate}
+Our objective will be to find a lower-bound on $R_h(\theta_h^k)$.\\
+\\
+Hypothesis class $\mathcal H\subseteq \{h : \mathcal X \to \mathbb R\}$
+\begin{definition}
+	[Correlation Alignment Complexity (CAC)] Let $\mathcal H\subseteq \{h : \mathcal X \to \mathbb R\}$ by a hypothesis class that you'll test functions in, and $\mu_H$ be a prior over said hypothesis class. Also $\nu \in L^2(\mathbb P_{\mathcal X})$.
+	\begin{align}
+		\text{Align}_C(\mu_H, \nu) = \left\{\sup_{||\phi||_{L_2} \leq 1}\mathbb E_{h \sim \mu_H}[\langle \phi, h-\nu\rangle_{L^2}^2] \right\}
+	\end{align}
+	Theo created this measurement, how.
+\end{definition}
+Remark: Large CAC fits in $\mathcal H$ centered by reference $g$ are mainly orthogonal to any fixed direction.
+
+\begin{theorem}
+	[Avbbe, Boirn-Adsen, 2022]
+	Consider $\theta_h^k$, which is the parameters after $k$ steps of noisy GD.
+	\begin{align}
+		\mathcal R_h (\theta_h^k) \geq ||h_k - v||_{L^2}^2  - \epsilon
+	\end{align}
+	with probability at least
+	\begin{align}
+		1 - \left ( \frac{R}{2z} \sqrt{\frac{k}{A}} + \frac{1}{\epsilon A} \right) 
+	\end{align}
+\end{theorem}
+Remark
+\begin{itemize}
+	\item If $k$ is too small, we don't improve on the trivial prediction, i.e. you'll always output $\nu$. This means you want
+	\begin{align}
+		k \geqslant \left (\frac{z}{R}\right)^2 \text{Align}
+	\end{align}
+	\item $z/R$ is the gradient precision. If Align is large, we'll either need a large amount of steps or small enough precision. Meaning you want 
+	\begin{align}
+		fk \geqslant \frac{\text{Align}}{R^2}
+	\end{align}
+\end{itemize}
+\subsubsection{Proof}
+The idea is to use "junk flow". This means you compare a noisy GD trajectory to another noisy GD trajectory, where the label is replaced with a "junk" label. Basically, if you can show that the two trajectories stay close together, then you can show the original trajectory can't minimize the test error.
+
+Consider noisy GD on true target $h$, $\{\theta_h^t\}_{t=0}^k$, and noisy GD on junk target $\nu$ $\{\theta_\nu^t\}_{t=0}^k$.
+
+We can further break down this proof by constructing two lemmas (which we'll not prove)
+\begin{lemma}
+	\begin{align}
+		\mathbb E_{h \sim \mu_H}[TV(\theta_nu^k, \theta_h^k)] \leq \frac{R}{2z} \sqrt{\frac{k}{A}}
+ 	\end{align}
+ 	There exists coupling $\theta_\nu^k, \theta_h^k$ s.t. $\mathbb P(\theta_h^k \neq \theta_\nu^k) \leq \frac{R}{2z} \sqrt{\frac{k}{A}}$
+\end{lemma}
+\begin{lemma}
+	\begin{align}
+		\mathbb P(R_h(\theta_\nu^k) \leq ||h - \nu||_{L^2}^2 - \epsilon) \leq \frac{1}{\epsilon A}
+	\end{align}
+\end{lemma}
+Proof of theorem
+\begin{align}
+	\mathbb P(R_h(\theta_h^k)\leq t) & \leq \mathbb P(\theta_h^k \neq \theta_\nu^k) + \mathbb P(R_k(\theta^k_\nu) \leq t)\\
+	= \frac{R}{2z} \sqrt{\frac{k}{A}} + \frac{1}{\epsilon A}
+\end{align}
+where we plug and chug the previous two lemmas
 
 
 
@@ -131,5 +327,10 @@ Under assumption of hardness. For all $\epsilon > 0$, the internsection of $d^\e
 
 
 
-\section{Reductions}
+
+
+
+
+
+
 
