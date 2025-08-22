@@ -227,7 +227,59 @@ If you apply the Nishmori identity, you should recall that the $x^T x$ and $x^T 
 Now you can solve for $f$ by doing saddle point approximation. Krzakala does a lot of justification why this works, but basically (as a physicists knows), usually you can make a concentration argument as the number of spins goes to infinity; meaning the saddle point solution is the true solution.
 
 
+\section{A Single Index Story}
+Consider weights $\mathbb R^d\ni \theta \sim p(\theta)$.
 
+We'll work with the \textbf{generalized linear model (GLM)}, these are now called \textbf{single index models}. What is this?\\
+\\
+Say you have Gaussian data $X \in \mathbb R^{n \times d}$, s.t. $X_{ij} \sim \mathcal N(0, \frac{1}{d})$. You create a vector $h$
+\begin{align}
+	\mathbb R^n \ni h = X \theta
+\end{align}
+This said to be a single index model because it only depends on a single vector $\theta$. 
+\begin{sidework}
+	\emph{Example:} $y_i = h_i + \xi_i \sqrt{\Delta} = X_i \theta + \sqrt{\Delta} \xi$\\
+	\\
+	\emph{Example:} $y_i = h_i^2$, which is a phase / sign retrivial problem
+	\\
+	\\
+	\emph{Example:} $y_i = \text{sign}(h_i + \xi)$.
+\end{sidework}
+We want to determine the behavior of this model in high dimension $d \to \infty$ and a lot of training data $n \to \infty$, s.t. the ratio between them is constant $n / d = \alpha$.\\
+\\
+The research question for this model:
+\begin{enumerate}
+	\item Can we recompute the free-energy / mutual information (this is the $\log Z$ quantity), and prove it?
+	\item Can you also do it via Bayes AMP?
+	\item Can we generalize this calculation to account of logistic regression? Or other penalties such as Lasso or Ridge?
+\end{enumerate}
+\subsubsection{Free Energy}
+So, after much calculation, you can get the quantity
+\begin{align}
+	f = \mathbb E[\frac{1}{d} \log Z] \to \sup_m \inf_n f_{RS}
+\end{align}
+where $\rho = \mathbb E[\theta]$
+\begin{align}
+	f_{RS} & = \psi(r) + \alpha \varphi(q, p) - \frac{r q}{2}\\
+	\psi(r) &= \mathbb E_{z, x} \log \mathbb E_x \exp \left( - r x x + \sqrt{2} x z_0 - r x^2/2 \right)\\
+	\varphi(q) & = \mathbb E \log \mathbb E P(y_0 | \sqrt{n} v + \sqrt{\rho - n} w)
+ \end{align}
+\subsubsection{Bayes AMP}
+Consider the algorithm
+\begin{align}
+	\mu^{t+1} &= A g_t(v^t) - d_t e_t(\mu^t)\\
+	v^t & = A e_t(\mu^t) - b_t g_{t-1}(v^{t-1})
+\end{align}
+Some names for these things: $e_t$ is the Bayes denoiser for $p_\theta + \text{noise}$, and $g_t = \mathbb E[h |Y]$ (up to constant noise). And $d_t = \frac{\alpha}{n} \sum_i g_t(\theta_i^t)$, and $b_t = \frac{1}{d} \sum_{i=1}^n e_t(\mu^t_i)$ is the Onsager term. And the matrix entries are $A_{ij} \sim \mathcal N(0, \frac{1}{d})$.\\
+\\
+What's cool is that this algorithm is exact to yesterday's algorithm via a transformation
+\begin{align}
+	h & = A_s \beta^t - b_t \beta^{t-1}\\
+	\beta^t & = f_t(h)
+\end{align}
+where $A_s = \sqrt{1/(1+\alpha)} \begin{pmatrix}
+	B  &A \\ A^T & C
+\end{pmatrix}$, $f_{2t}(\cdot) = \sqrt{1+\alpha} (O / e_t(\cdot))$, and $f_{2t+1} \sqrt{1+\alpha} \left( g_t(\cdot) / O \right)$.  
 
 
 
